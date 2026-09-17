@@ -253,6 +253,7 @@ describe('database tools in a preset this package does not own', () => {
     const registered: string[] = []
     const restrictions: unknown[] = []
     const commands: string[] = []
+    const extended: Record<symbol, unknown>[] = []
     const standing = { key: Symbol('standing'), tag: Symbol('scope') }
     const ctx: any = {
       logger: { info() {}, warn() {} },
@@ -266,7 +267,7 @@ describe('database tools in a preset this package does not own', () => {
         standingKeyFor: async () => standing.key,
         standing: new Map([['code', Promise.resolve({ key: standing.key, scope: { ctx: { [standing.tag]: standing.key } } })]]),
       },
-      extend(values: Record<symbol, unknown>) { return { ...ctx, ...values } },
+      extend(values: Record<symbol, unknown>) { extended.push(values); return { ...ctx, ...values } },
       get() { return undefined },
       effect() { return () => {} },
       emit() {},
@@ -284,6 +285,9 @@ describe('database tools in a preset this package does not own', () => {
     // /database and /catalog. A borrowed preset must keep both of its own.
     expect(restrictions).toEqual([])
     expect(commands).toEqual([])
+    // Registered through the named preset's standing scope, not the bare host
+    // Context: the wrong tag would hand SQL to every preset in the deployment.
+    expect(extended).toEqual([{ [standing.tag]: standing.key }])
   })
 
   it('refuses a preset that does not exist instead of silently skipping it', async () => {
