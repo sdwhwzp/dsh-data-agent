@@ -4,6 +4,7 @@ import {
   executeCatalogCommand,
   parseCatalogAction,
 } from '../src/catalog-command.ts'
+import { testAccounts } from './support/accounts.ts'
 
 function invocation(rawInput: string) {
   return {
@@ -38,7 +39,12 @@ function fixture(questions?: { ask(request: any): Promise<any> }) {
       async cancel(_sourceId: string, runId?: string) { calls.push({ method: 'cancel', value: runId }); return run },
     },
     get(name: string) { return name === 'userQuestions' ? questions : undefined },
-  }
+  } as Record<string, unknown>
+  ctx.dataAgentAccounts = testAccounts({
+    connections: ctx.dataAgentConnections,
+    catalog: ctx.dataAgentCatalog,
+    scanner: ctx.dataAgentCatalogScanner,
+  })
   return { ctx: ctx as never, calls }
 }
 

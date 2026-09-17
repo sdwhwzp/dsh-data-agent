@@ -7,7 +7,6 @@
  * @module @yejiming/dsh-data-agent/routes
  */
 import type { Context } from '@deepseek-ai/cordis';
-import z from 'schemastery';
 import type { DatabaseConnectionInput } from './connections.ts';
 export declare const name = "data-agent-routes";
 /** Headless profiles activate this row without waiting forever for webServer. */
@@ -22,20 +21,20 @@ export interface Config {
     maxQueryChars: number;
     readonly: boolean;
 }
-export declare const Config: z<Schemastery.ObjectS<{
-    connectTimeoutMs: z<number, number>;
-    introspectMaxTables: z<number, number>;
-    maxResultChars: z<number, number>;
-    queryTimeoutMs: z<number, number>;
-    maxQueryChars: z<number, number>;
-    readonly: z<boolean, boolean>;
+export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
 }>, Schemastery.ObjectT<{
-    connectTimeoutMs: z<number, number>;
-    introspectMaxTables: z<number, number>;
-    maxResultChars: z<number, number>;
-    queryTimeoutMs: z<number, number>;
-    maxQueryChars: z<number, number>;
-    readonly: z<boolean, boolean>;
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
 }>>;
 export interface ConnectRequestBody extends DatabaseConnectionInput {
     sessionId: string;

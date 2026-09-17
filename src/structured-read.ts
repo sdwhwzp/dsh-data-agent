@@ -10,6 +10,7 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import { executionScope } from './accounts.ts'
 import { classifyStatement, enforceReadRowLimit, type ClientConfig } from './clients.ts'
 import { redactQueryResult, redactSecretText, type DatabaseConnection } from './connections.ts'
 import { runClientQuery, type QueryOptions, type QueryResult } from './query.ts'
@@ -41,14 +42,24 @@ export interface StructuredReadResult {
   truncated: boolean
 }
 
-/** Look up the session connection, failing with the same message for every tool. */
+/**
+ * Look up the session connection, failing with the same message for every tool.
+ *
+ * The connection comes from the account that requested this model step, not
+ * from a process-wide store: a session id alone never selects a connection.
+ * @param ctx - the tool row's Context.
+ * @param exec - the running tool execution.
+ * @param toolName - tool name prefixed onto every failure.
+ * @returns the resolved connection with its credential applied.
+ */
 export async function requireToolConnection(ctx: Context, exec: ToolExecLike, toolName: string): Promise<DatabaseConnection> {
   const sessionId = exec.agent?.id
   if (sessionId === undefined) {
     throw new Error(toolName + ': 缺少会话上下文（agent loop 未注入）')
   }
   try {
-    return await ctx.dataAgentConnections.resolveForExecution(sessionId)
+    const account = await executionScope(ctx, exec, toolName)
+    return await account.connections.resolveForExecution(sessionId)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(toolName + ': ' + message)

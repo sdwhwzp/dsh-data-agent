@@ -301,7 +301,10 @@ export function normalizeConnectionInput(
     if (input.password !== undefined && input.password.length > 0) connection.password = input.password
     if (input.passwordRef !== undefined) connection.passwordRef = input.passwordRef
   }
-  if (input.readonly !== undefined) connection.readonly = input.readonly
+  // A connection that does not state its mode is read-only. The agent can run
+  // `sql-write` and `sql-cmd` through whatever this resolves to, so the safe
+  // mode is the one a caller gets by saying nothing.
+  connection.readonly = input.readonly ?? true
   if (input.type === 'clickhouse' && input.secure !== undefined) connection.secure = input.secure
   if (input.profileId !== undefined) connection.profileId = input.profileId
   if (input.name !== undefined) connection.name = input.name

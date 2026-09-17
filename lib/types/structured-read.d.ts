@@ -36,7 +36,16 @@ export interface StructuredReadResult {
     elapsedMs: number;
     truncated: boolean;
 }
-/** Look up the session connection, failing with the same message for every tool. */
+/**
+ * Look up the session connection, failing with the same message for every tool.
+ *
+ * The connection comes from the account that requested this model step, not
+ * from a process-wide store: a session id alone never selects a connection.
+ * @param ctx - the tool row's Context.
+ * @param exec - the running tool execution.
+ * @param toolName - tool name prefixed onto every failure.
+ * @returns the resolved connection with its credential applied.
+ */
 export declare function requireToolConnection(ctx: Context, exec: ToolExecLike, toolName: string): Promise<DatabaseConnection>;
 /** Run and redact a client result/error before it reaches tool/session output. */
 export declare function runRedactedClientQuery(ctx: Context, connection: DatabaseConnection, sql: string, options: QueryOptions, signal: AbortSignal): Promise<QueryResult>;

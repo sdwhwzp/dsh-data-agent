@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyCatalogTools, sanitizeToolValue } from '../src/catalog-tools.ts'
+import { testAccounts } from './support/accounts.ts'
 
 function toolFixture(options?: { sources?: number }) {
   const definitions: any[] = []
@@ -49,6 +50,7 @@ function toolFixture(options?: { sources?: number }) {
   applyCatalogTools({
     tools: { register(definition: any) { definitions.push(definition) } },
     dataAgentCatalog: catalog,
+    dataAgentAccounts: testAccounts({ catalog }),
   } as never)
   return { definitions, calls }
 }

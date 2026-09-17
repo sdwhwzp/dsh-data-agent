@@ -42,23 +42,42 @@ const catalogIndexStateSchema: z.ZodType<CatalogIndexState> = z.strictObject({
   rebuiltAt: catalogDateTimeSchema.optional(),
 })
 
+const catalogStorageTables = {
+  sources: domainTable<string, CatalogSource>(catalogSourceSchema),
+  scan_runs: domainTable<string, CatalogRun>(catalogRunSchema),
+  observations: domainTable<string, CatalogObservation>(catalogObservationSchema),
+  asset_revisions: domainTable<string, CatalogAssetRevision>(catalogAssetRevisionSchema),
+  asset_heads: domainTable<string, CatalogAssetHead>(catalogAssetHeadSchema),
+  relations: domainTable<string, CatalogRelation>(catalogRelationSchema),
+  semantic_entries: domainTable<string, CatalogSemanticEntry>(catalogSemanticEntrySchema),
+  semantic_revisions: domainTable<string, CatalogSemanticRevision>(catalogSemanticRevisionSchema),
+  search_index: domainTable<string, CatalogIndexRecord>(catalogIndexRecordSchema),
+  index_state: domainTable<string, CatalogIndexState>(catalogIndexStateSchema),
+}
+
 /** Strict schemas reject secret-shaped or raw-result fields at the durable boundary. */
 export const catalogStorageSpec = defineDomain({
   name: CATALOG_STORAGE_DOMAIN,
   version: CATALOG_STORAGE_VERSION,
-  tables: {
-    sources: domainTable<string, CatalogSource>(catalogSourceSchema),
-    scan_runs: domainTable<string, CatalogRun>(catalogRunSchema),
-    observations: domainTable<string, CatalogObservation>(catalogObservationSchema),
-    asset_revisions: domainTable<string, CatalogAssetRevision>(catalogAssetRevisionSchema),
-    asset_heads: domainTable<string, CatalogAssetHead>(catalogAssetHeadSchema),
-    relations: domainTable<string, CatalogRelation>(catalogRelationSchema),
-    semantic_entries: domainTable<string, CatalogSemanticEntry>(catalogSemanticEntrySchema),
-    semantic_revisions: domainTable<string, CatalogSemanticRevision>(catalogSemanticRevisionSchema),
-    search_index: domainTable<string, CatalogIndexRecord>(catalogIndexRecordSchema),
-    index_state: domainTable<string, CatalogIndexState>(catalogIndexStateSchema),
-  },
+  tables: catalogStorageTables,
 })
+
+/**
+ * The same layout under one account's private domain name.
+ *
+ * Catalog rows carry table names, column meanings and sampled metric text read
+ * out of a real database, so they are isolated exactly like the connection
+ * profiles that produced them (see `./owner.ts`).
+ * @param ownerKey - the account's key from `ownerKeyOf`.
+ * @returns the domain spec for that account.
+ */
+export function accountCatalogStorageSpec(ownerKey: string): typeof catalogStorageSpec {
+  return defineDomain({
+    name: `${CATALOG_STORAGE_DOMAIN}_${ownerKey}`,
+    version: CATALOG_STORAGE_VERSION,
+    tables: catalogStorageTables,
+  })
+}
 
 export type CatalogStorageDomain = Domain<typeof catalogStorageSpec>
 

@@ -13,7 +13,6 @@
  * @module @yejiming/dsh-data-agent/clients
  */
 import type { DatabaseConnection, DatabaseType } from './connections.ts';
-import z from 'schemastery';
 import { assertSingleStatement, assertSqlServerSafeInput, hasTopLevelKeyword, stripTrailingTerminator } from './sql.ts';
 export { assertSingleStatement, assertSqlServerSafeInput, hasTopLevelKeyword, stripTrailingTerminator };
 /**
@@ -56,23 +55,23 @@ export interface ClientConfig {
 /** Database types backed by a locally resolved CLI executable. */
 export type CliDatabaseType = Exclude<DatabaseType, 'clickhouse'>;
 /** Loader schema for one client override (all fields optional at input). */
-export declare const clientConfigSchema: z<Schemastery.ObjectS<{
-    command: z<string, string>;
-    args: z<string[], string[]>;
-    searchPaths: z<string[], string[]>;
+export declare const clientConfigSchema: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
+    command: import("@deepseek-ai/schemastery").default<string, string>;
+    args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
 }>, Schemastery.ObjectT<{
-    command: z<string, string>;
-    args: z<string[], string[]>;
-    searchPaths: z<string[], string[]>;
+    command: import("@deepseek-ai/schemastery").default<string, string>;
+    args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
 }>>;
-export declare const clientsSchema: z<import("cosmokit").Dict<{
+export declare const clientsSchema: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
     command?: string | null | undefined;
     args?: string[] | null | undefined;
     searchPaths?: string[] | null | undefined;
-} & import("@deepseek-ai/cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("cosmokit").Dict<Schemastery.ObjectT<{
-    command: z<string, string>;
-    args: z<string[], string[]>;
-    searchPaths: z<string[], string[]>;
+} & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+    command: import("@deepseek-ai/schemastery").default<string, string>;
+    args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
 }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
 /**
  * A fully constructed client invocation: argv (command + flags, no SQL),

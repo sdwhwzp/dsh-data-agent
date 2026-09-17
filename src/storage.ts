@@ -57,16 +57,37 @@ export const persistedConnectionFormDraftSchema = z.object({
   updatedAt: z.string().min(1),
 }).strict()
 
+const connectionStorageTables = {
+  profiles: domainTable<string, PersistedConnectionProfile>(persistedConnectionProfileSchema),
+  bindings: domainTable<string, SessionConnectionBinding>(sessionConnectionBindingSchema),
+  drafts: domainTable<string, PersistedConnectionFormDraft>(persistedConnectionFormDraftSchema),
+}
+
 /** Single source of truth for the storage layout and durable validation. */
 export const connectionStorageSpec = defineDomain({
   name: CONNECTION_STORAGE_DOMAIN,
   version: CONNECTION_STORAGE_VERSION,
-  tables: {
-    profiles: domainTable<string, PersistedConnectionProfile>(persistedConnectionProfileSchema),
-    bindings: domainTable<string, SessionConnectionBinding>(sessionConnectionBindingSchema),
-    drafts: domainTable<string, PersistedConnectionFormDraft>(persistedConnectionFormDraftSchema),
-  },
+  tables: connectionStorageTables,
 })
+
+/**
+ * The same layout under one account's private domain name.
+ *
+ * An account-isolated deployment opens one of these per authenticated account
+ * instead of {@link connectionStorageSpec}, so a profile, binding or draft of
+ * another account is not merely filtered out of a result but absent from the
+ * medium the query reads (see `./owner.ts`). The unsuffixed name stays reserved
+ * for unisolated deployments, which therefore need no migration.
+ * @param ownerKey - the account's key from `ownerKeyOf`.
+ * @returns the domain spec for that account.
+ */
+export function accountConnectionStorageSpec(ownerKey: string): typeof connectionStorageSpec {
+  return defineDomain({
+    name: `${CONNECTION_STORAGE_DOMAIN}_${ownerKey}`,
+    version: CONNECTION_STORAGE_VERSION,
+    tables: connectionStorageTables,
+  })
+}
 
 export type ConnectionStorageDomain = Domain<typeof connectionStorageSpec>
 

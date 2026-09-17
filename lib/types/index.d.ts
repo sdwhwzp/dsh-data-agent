@@ -27,7 +27,6 @@ declare module '@deepseek-ai/cordis' {
         dataAgentCatalogReview: DataAgentCatalogReview;
     }
 }
-import z from 'schemastery';
 import { type DataAgentConnections, type DatabaseType } from './connections.ts';
 import { type CliDatabaseType, type ClientConfig } from './clients.ts';
 import { type DataAgentCatalog, type DataAgentCatalogReview, type DataAgentCatalogScanner } from './catalog.ts';
@@ -103,35 +102,35 @@ export interface Config {
     connections: Record<string, SeededConnectionConfig>;
 }
 /** Loader schema with deployment defaults (no library defaults). */
-export declare const Config: z<Schemastery.ObjectS<{
-    presetId: z<string, string>;
-    installPreset: z<boolean, boolean>;
-    connectTimeoutMs: z<number, number>;
-    introspectMaxTables: z<number, number>;
-    queryTimeoutMs: z<number, number>;
-    catalogQueryTimeoutMs: z<number, number>;
-    catalogMaxResultChars: z<number, number>;
-    catalogSchemaConcurrency: z<number, number>;
-    catalogAssetConcurrency: z<number, number>;
-    catalogMaxAssetsPerRun: z<number, number>;
-    catalogMaxTextChars: z<number, number>;
-    catalogPageSize: z<number, number>;
-    catalogMaxPageSize: z<number, number>;
-    maxResultChars: z<number, number>;
-    maxRows: z<number, number>;
-    maxQueryChars: z<number, number>;
-    readonly: z<boolean, boolean>;
-    persistConnections: z<boolean, boolean>;
-    clients: z<import("cosmokit").Dict<{
+export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
+    presetId: import("@deepseek-ai/schemastery").default<string, string>;
+    installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogQueryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogSchemaConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogAssetConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxAssetsPerRun: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxTextChars: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogPageSize: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxPageSize: import("@deepseek-ai/schemastery").default<number, number>;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    persistConnections: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("@deepseek-ai/cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("cosmokit").Dict<Schemastery.ObjectT<{
-        command: z<string, string>;
-        args: z<string[], string[]>;
-        searchPaths: z<string[], string[]>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+        command: import("@deepseek-ai/schemastery").default<string, string>;
+        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
     }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
-    connections: z<import("cosmokit").Dict<{
+    connections: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         type?: "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver" | null | undefined;
         host?: string | null | undefined;
         port?: number | null | undefined;
@@ -141,46 +140,46 @@ export declare const Config: z<Schemastery.ObjectS<{
         secure?: boolean | null | undefined;
         passwordRef?: string | null | undefined;
         password?: null | undefined;
-    } & import("@deepseek-ai/cosmokit").Dict, string>, import("cosmokit").Dict<Schemastery.ObjectT<{
-        type: z<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver">;
-        host: z<string, string>;
-        port: z<number, number>;
-        user: z<string, string>;
-        database: z<string, string>;
-        readonly: z<boolean, boolean>;
-        secure: z<boolean, boolean>;
-        passwordRef: z<string, string>;
-        password: z<never, never>;
+    } & import("cosmokit").Dict, string>, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+        type: import("@deepseek-ai/schemastery").default<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver">;
+        host: import("@deepseek-ai/schemastery").default<string, string>;
+        port: import("@deepseek-ai/schemastery").default<number, number>;
+        user: import("@deepseek-ai/schemastery").default<string, string>;
+        database: import("@deepseek-ai/schemastery").default<string, string>;
+        readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+        secure: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+        passwordRef: import("@deepseek-ai/schemastery").default<string, string>;
+        password: import("@deepseek-ai/schemastery").default<never, never>;
     }>, string>>;
 }>, Schemastery.ObjectT<{
-    presetId: z<string, string>;
-    installPreset: z<boolean, boolean>;
-    connectTimeoutMs: z<number, number>;
-    introspectMaxTables: z<number, number>;
-    queryTimeoutMs: z<number, number>;
-    catalogQueryTimeoutMs: z<number, number>;
-    catalogMaxResultChars: z<number, number>;
-    catalogSchemaConcurrency: z<number, number>;
-    catalogAssetConcurrency: z<number, number>;
-    catalogMaxAssetsPerRun: z<number, number>;
-    catalogMaxTextChars: z<number, number>;
-    catalogPageSize: z<number, number>;
-    catalogMaxPageSize: z<number, number>;
-    maxResultChars: z<number, number>;
-    maxRows: z<number, number>;
-    maxQueryChars: z<number, number>;
-    readonly: z<boolean, boolean>;
-    persistConnections: z<boolean, boolean>;
-    clients: z<import("cosmokit").Dict<{
+    presetId: import("@deepseek-ai/schemastery").default<string, string>;
+    installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogQueryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogSchemaConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogAssetConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxAssetsPerRun: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxTextChars: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogPageSize: import("@deepseek-ai/schemastery").default<number, number>;
+    catalogMaxPageSize: import("@deepseek-ai/schemastery").default<number, number>;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    persistConnections: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("@deepseek-ai/cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("cosmokit").Dict<Schemastery.ObjectT<{
-        command: z<string, string>;
-        args: z<string[], string[]>;
-        searchPaths: z<string[], string[]>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+        command: import("@deepseek-ai/schemastery").default<string, string>;
+        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
     }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
-    connections: z<import("cosmokit").Dict<{
+    connections: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         type?: "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver" | null | undefined;
         host?: string | null | undefined;
         port?: number | null | undefined;
@@ -190,16 +189,16 @@ export declare const Config: z<Schemastery.ObjectS<{
         secure?: boolean | null | undefined;
         passwordRef?: string | null | undefined;
         password?: null | undefined;
-    } & import("@deepseek-ai/cosmokit").Dict, string>, import("cosmokit").Dict<Schemastery.ObjectT<{
-        type: z<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver">;
-        host: z<string, string>;
-        port: z<number, number>;
-        user: z<string, string>;
-        database: z<string, string>;
-        readonly: z<boolean, boolean>;
-        secure: z<boolean, boolean>;
-        passwordRef: z<string, string>;
-        password: z<never, never>;
+    } & import("cosmokit").Dict, string>, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+        type: import("@deepseek-ai/schemastery").default<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver">;
+        host: import("@deepseek-ai/schemastery").default<string, string>;
+        port: import("@deepseek-ai/schemastery").default<number, number>;
+        user: import("@deepseek-ai/schemastery").default<string, string>;
+        database: import("@deepseek-ai/schemastery").default<string, string>;
+        readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+        secure: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+        passwordRef: import("@deepseek-ai/schemastery").default<string, string>;
+        password: import("@deepseek-ai/schemastery").default<never, never>;
     }>, string>>;
 }>>;
 /**

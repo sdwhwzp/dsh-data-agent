@@ -22,6 +22,7 @@ import {
   runTuiConnectionForm,
 } from './tui-connection-form.ts'
 import type {} from './index.ts'
+import type { DataAgentScope } from './accounts.ts'
 import { registerCatalogCommand } from './catalog-command.ts'
 import { createCatalogTuiAdapter } from './catalog-tui.ts'
 
@@ -170,25 +171,29 @@ export async function executeDatabaseCommand(
   try {
     const action = parseDatabaseAction(invocation.rawInput)
     const sessionId = String(invocation.agent.id)
+    // A command invocation carries no identity of its own; the Remote dispatch
+    // driving it does. On an unisolated deployment — every dsh-tui one, the
+    // only composition that registers this command — this is the shared scope.
+    const account = await ctx.dataAgentAccounts.forDispatch('/database')
     switch (action.kind) {
       case 'status': {
-        const summary = await ctx.dataAgentConnections.status(sessionId)
+        const summary = await account.connections.status(sessionId)
         const tools = ctx.tools.schemas(invocation.agent).map(schema => schema.name).sort()
         return { kind: 'success', text: `${formatConnectionStatus(summary)}\n模型工具：${tools.join(', ') || '（无）'}\n\n${DATABASE_COMMAND_USAGE}` }
       }
       case 'connect': {
-        const input = action.input ?? await askForConnection(ctx, invocation, interaction)
+        const input = action.input ?? await askForConnection(ctx, account, invocation, interaction)
         if (input === undefined) return { kind: 'error', text: `当前界面没有可用的问答 provider。\n\n${DATABASE_COMMAND_USAGE}` }
         transientPassword = input.password
-        const result = await ctx.dataAgentConnections.connect(sessionId, input, invocation.signal)
+        const result = await account.connections.connect(sessionId, input, invocation.signal)
         return { kind: 'success', text: `数据库连接成功。\n${formatConnectionStatus(result.summary)}` }
       }
       case 'test': {
-        const result = await ctx.dataAgentConnections.test(sessionId, invocation.signal)
+        const result = await account.connections.test(sessionId, invocation.signal)
         return { kind: 'success', text: `数据库连接测试成功，发现 ${result.tables.length} 张表。\n${formatConnectionStatus(result.summary)}` }
       }
       case 'disconnect':
-        await ctx.dataAgentConnections.disconnect(sessionId)
+        await account.connections.disconnect(sessionId)
         return { kind: 'success', text: '当前会话已断开数据库连接；可复用的非敏感 connection profile 已保留。' }
     }
   } catch (error) {
@@ -312,16 +317,17 @@ export function formatConnectionStatus(summary: ConnectionSummary | undefined): 
 
 async function askForConnection(
   ctx: Context,
+  account: DataAgentScope,
   invocation: CommandInvocation,
   interaction: DatabaseCommandInteraction,
 ): Promise<DatabaseConnectionInput | undefined> {
   if (interaction.isTuiFormAvailable()) {
     const sessionId = String(invocation.agent.id)
-    const initialDraft = ctx.dataAgentConnections.getFormDraft?.(sessionId)
+    const initialDraft = account.connections.getFormDraft?.(sessionId)
     const input = await interaction.collectTuiConnection(invocation.signal, {
       ...initialDraft !== undefined ? { initialDraft } : {},
       persistDraft: async draft => {
-        await ctx.dataAgentConnections.saveFormDraft?.(sessionId, draft)
+        await account.connections.saveFormDraft?.(sessionId, draft)
       },
     })
     if (input === undefined) throw new Error('已取消数据库连接。')

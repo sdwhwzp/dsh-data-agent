@@ -590,7 +590,8 @@ describe('DataAgentConnectionService', () => {
       },
     })
     const service = createConnectionService(host.ctx, serviceOptions)
-    await service.connect('s', { type: 'sqlite', database: 'orders.db' }, signal())
+    // Explicitly writable: a connection that states no mode is read-only.
+    await service.connect('s', { type: 'sqlite', database: 'orders.db', readonly: false }, signal())
 
     const read = await service.executeInteractive('s', 'SELECT id, name FROM users;', signal())
     expect(read).toEqual({

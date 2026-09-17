@@ -130,7 +130,8 @@ DSH Data Agent supports a wide variety of relational databases, analytical data 
 
 ## Security & Privacy
 
-- 🛡️ **Strict Read-Only Protection**: Use a read-only database account and enable "Read-Only Mode" to prevent accidental data modification or deletion.
+- 🛡️ **Read-Only by Default**: A new connection starts in read-only mode and only an explicit opt-out admits writes; every `sql-write` and `sql-cmd` write is recorded in the runtime log.
+- 👥 **Accounts Cannot See Each Other**: Where the deployment authenticates requests (a multi-account Web gateway), each account owns private connection-profile and Catalog storage, so another account's session id, profile id, or Catalog source id resolves to nothing. Personal and terminal deployments, which authenticate nobody, behave exactly as before.
 - 🔑 **Credential Isolation**: Database passwords are used strictly in the current runtime session, never written to plain-text logs, and never sent to external servers.
 - 💻 **100% Local Execution**: Query execution and report generation happen entirely on your local machine, keeping business data private and secure.
 

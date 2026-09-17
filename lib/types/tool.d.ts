@@ -18,7 +18,6 @@
  * @module @yejiming/dsh-data-agent/tool
  */
 import type { Context } from '@deepseek-ai/cordis';
-import z from 'schemastery';
 import { type ClientConfig } from './clients.ts';
 /** Cordis plugin name (diagnostics only). */
 export declare const name = "data-agent-tool";
@@ -40,35 +39,35 @@ export interface Config {
     clients: Partial<Record<string, ClientConfig>>;
 }
 /** Loader schema with deployment defaults (no library defaults). */
-export declare const Config: z<Schemastery.ObjectS<{
-    queryTimeoutMs: z<number, number>;
-    maxResultChars: z<number, number>;
-    maxRows: z<number, number>;
-    maxQueryChars: z<number, number>;
-    readonly: z<boolean, boolean>;
-    clients: z<import("cosmokit").Dict<{
+export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("@deepseek-ai/cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("cosmokit").Dict<Schemastery.ObjectT<{
-        command: z<string, string>;
-        args: z<string[], string[]>;
-        searchPaths: z<string[], string[]>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+        command: import("@deepseek-ai/schemastery").default<string, string>;
+        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
     }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
 }>, Schemastery.ObjectT<{
-    queryTimeoutMs: z<number, number>;
-    maxResultChars: z<number, number>;
-    maxRows: z<number, number>;
-    maxQueryChars: z<number, number>;
-    readonly: z<boolean, boolean>;
-    clients: z<import("cosmokit").Dict<{
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("@deepseek-ai/cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("cosmokit").Dict<Schemastery.ObjectT<{
-        command: z<string, string>;
-        args: z<string[], string[]>;
-        searchPaths: z<string[], string[]>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
+        command: import("@deepseek-ai/schemastery").default<string, string>;
+        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
     }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
 }>>;
 /**

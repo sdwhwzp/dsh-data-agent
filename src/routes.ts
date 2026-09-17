@@ -21,6 +21,8 @@ import {
   semanticDefinitionSchema,
 } from './catalog-types.ts'
 import type { DatabaseConnectionInput } from './connections.ts'
+import { MissingPrincipalError } from './owner.ts'
+import type {} from './accounts.ts'
 import { DATABASE_TYPES, isDatabaseType } from './database-types.ts'
 import {
   DEFAULT_CONNECT_TIMEOUT_MS,
@@ -106,7 +108,8 @@ export function validateConnectBody(value: unknown, cwd = process.cwd()): Connec
 /** Register Web routes only when both the webserver and shared service exist. */
 export function apply(ctx: Context, _config: Config): void {
   ctx.inject([
-    'webServer', 'dataAgentConnections', 'dataAgentCatalog', 'dataAgentCatalogScanner', 'dataAgentCatalogReview',
+    'webServer', 'dataAgentAccounts',
+    'dataAgentConnections', 'dataAgentCatalog', 'dataAgentCatalogScanner', 'dataAgentCatalogReview',
   ], (scope) => {
     scope.effect(() => {
       const dispose = scope.webServer.register({
@@ -121,12 +124,18 @@ export function apply(ctx: Context, _config: Config): void {
             const url = new URL(req.url ?? '/', 'http://dsh.internal')
             const segments = url.pathname.slice(DATA_AGENT_PATH.length).split('/').filter(Boolean)
             const signal = requestSignal(req)
+            // Every route here reads or writes a real database, and its session
+            // id arrives in the request body where any signed-in caller could
+            // put another account's. Authenticate first: the resolved account
+            // owns a private store, so a foreign session id, profile id or
+            // Catalog source id finds nothing rather than someone else's row.
+            const account = await scope.dataAgentAccounts.forRequest(req, 'data-agent 接口')
 
             if (req.method === 'POST' && routeIs(segments, 'connect')) {
               try {
                 const request = validateConnectBody(await readJson(req))
                 const { sessionId, ...input } = request
-                const result = await scope.dataAgentConnections.connect(sessionId, input, signal)
+                const result = await account.connections.connect(sessionId, input, signal)
                 writeJson(200, { ok: true, tables: result.tables, summary: result.summary })
               } catch (error) {
                 writeJson(200, { ok: false, error: error instanceof Error ? error.message : String(error) })
@@ -136,14 +145,14 @@ export function apply(ctx: Context, _config: Config): void {
 
             if (req.method === 'POST' && routeIs(segments, 'disconnect')) {
               const sessionId = requireString((await readJson(req) as Record<string, unknown>).sessionId, 'sessionId')
-              await scope.dataAgentConnections.disconnect(sessionId)
+              await account.connections.disconnect(sessionId)
               writeJson(200, { ok: true })
               return
             }
 
             if (req.method === 'GET' && routeIs(segments, 'status')) {
               const sessionId = requireString(url.searchParams.get('sessionId'), 'sessionId')
-              const summary = await scope.dataAgentConnections.status(sessionId)
+              const summary = await account.connections.status(sessionId)
               writeJson(200, summary === undefined
                 ? { connected: false, reconnectRequired: false }
                 : {
@@ -156,7 +165,7 @@ export function apply(ctx: Context, _config: Config): void {
 
             if (req.method === 'GET' && routeIs(segments, 'schemas')) {
               const sessionId = requireString(url.searchParams.get('sessionId'), 'sessionId')
-              const schemas = await scope.dataAgentConnections.listSchemas(sessionId, signal)
+              const schemas = await account.connections.listSchemas(sessionId, signal)
               writeJson(200, { ok: true, schemas })
               return
             }
@@ -164,7 +173,7 @@ export function apply(ctx: Context, _config: Config): void {
             if (req.method === 'GET' && routeIs(segments, 'tables')) {
               const sessionId = requireString(url.searchParams.get('sessionId'), 'sessionId')
               const schema = url.searchParams.get('schema') ?? undefined
-              const tables = await scope.dataAgentConnections.listTables(sessionId, schema, signal)
+              const tables = await account.connections.listTables(sessionId, schema, signal)
               writeJson(200, { ok: true, tables })
               return
             }
@@ -173,7 +182,7 @@ export function apply(ctx: Context, _config: Config): void {
               const sessionId = requireString(url.searchParams.get('sessionId'), 'sessionId')
               const schema = url.searchParams.get('schema') ?? undefined
               const table = requireString(url.searchParams.get('table'), 'table')
-              const columns = await scope.dataAgentConnections.describe(sessionId, schema, table, signal)
+              const columns = await account.connections.describe(sessionId, schema, table, signal)
               writeJson(200, { ok: true, columns })
               return
             }
@@ -182,21 +191,21 @@ export function apply(ctx: Context, _config: Config): void {
               const body = await readJson(req) as Record<string, unknown>
               const sessionId = requireString(body.sessionId, 'sessionId')
               const sql = requireString(body.sql, 'sql')
-              const result = await scope.dataAgentConnections.executeInteractive(sessionId, sql, signal)
+              const result = await account.connections.executeInteractive(sessionId, sql, signal)
               writeJson(200, { ok: true, result })
               return
             }
 
             if (req.method === 'GET' && routePathIs(segments, 'catalog', 'sources')) {
               assertOnlySearchParams(url.searchParams, [])
-              writeJson(200, { ok: true, sources: scope.dataAgentCatalog.listSources() })
+              writeJson(200, { ok: true, sources: account.catalog.listSources() })
               return
             }
 
             if (req.method === 'GET' && routePathIs(segments, 'catalog', 'status')) {
               assertOnlySearchParams(url.searchParams, ['sourceId'])
               const sourceId = requireBoundedString(url.searchParams.get('sourceId'), 'sourceId')
-              const status = scope.dataAgentCatalog.status(sourceId)
+              const status = account.catalog.status(sourceId)
               writeJson(200, { ok: true, status: status ?? null })
               return
             }
@@ -205,24 +214,24 @@ export function apply(ctx: Context, _config: Config): void {
               assertOnlySearchParams(url.searchParams, ['sourceId', 'limit'])
               const sourceId = requireBoundedString(url.searchParams.get('sourceId'), 'sourceId')
               const limit = optionalPositiveInteger(url.searchParams.get('limit'), 'limit', 200)
-              writeJson(200, { ok: true, runs: scope.dataAgentCatalog.listRuns(sourceId, limit) })
+              writeJson(200, { ok: true, runs: account.catalog.listRuns(sourceId, limit) })
               return
             }
 
             if (req.method === 'POST' && routePathIs(segments, 'catalog', 'scan')) {
               const body = catalogScanBodySchema.parse(await readJson(req))
               if (body.sourceId !== undefined) {
-                const summary = scope.dataAgentConnections.get(body.sessionId)
+                const summary = account.connections.get(body.sessionId)
                 if (summary?.profileId !== body.sourceId) throw new Error('sourceId does not match the session connection')
               }
-              const run = await scope.dataAgentCatalogScanner.start({ sessionId: body.sessionId, scope: body.scope })
+              const run = await account.scanner.start({ sessionId: body.sessionId, scope: body.scope })
               writeJson(202, { ok: true, run })
               return
             }
 
             if (req.method === 'POST' && routePathIs(segments, 'catalog', 'cancel')) {
               const body = catalogCancelBodySchema.parse(await readJson(req))
-              const run = await scope.dataAgentCatalogScanner.cancel(body.sourceId, body.runId)
+              const run = await account.scanner.cancel(body.sourceId, body.runId)
               writeJson(200, { ok: true, run })
               return
             }
@@ -250,7 +259,7 @@ export function apply(ctx: Context, _config: Config): void {
                 ...url.searchParams.get('cursor') !== null ? { cursor: url.searchParams.get('cursor') } : {},
                 ...pageSize !== undefined ? { pageSize } : {},
               })
-              writeJson(200, { ok: true, page: await scope.dataAgentCatalog.search(request) })
+              writeJson(200, { ok: true, page: await account.catalog.search(request) })
               return
             }
 
@@ -260,7 +269,7 @@ export function apply(ctx: Context, _config: Config): void {
               const assetId = requireBoundedString(segments[2], 'assetId')
               const pageSize = optionalPositiveInteger(url.searchParams.get('pageSize'), 'pageSize', 200)
               const cursor = optionalBoundedString(url.searchParams.get('cursor'), 'cursor', 512)
-              writeJson(200, { ok: true, detail: scope.dataAgentCatalog.getAsset(sourceId, assetId, cursor, pageSize) })
+              writeJson(200, { ok: true, detail: account.catalog.getAsset(sourceId, assetId, cursor, pageSize) })
               return
             }
 
@@ -272,7 +281,7 @@ export function apply(ctx: Context, _config: Config): void {
               if ((fromRunId === undefined) !== (toRunId === undefined)) throw new Error('from and to must be supplied together')
               const cursor = optionalBoundedString(url.searchParams.get('cursor'), 'cursor', 512)
               const pageSize = optionalPositiveInteger(url.searchParams.get('pageSize'), 'pageSize', 200)
-              writeJson(200, { ok: true, diff: scope.dataAgentCatalog.diff(sourceId, fromRunId, toRunId, cursor, pageSize) })
+              writeJson(200, { ok: true, diff: account.catalog.diff(sourceId, fromRunId, toRunId, cursor, pageSize) })
               return
             }
 
@@ -281,13 +290,13 @@ export function apply(ctx: Context, _config: Config): void {
               const sourceId = requireBoundedString(url.searchParams.get('sourceId'), 'sourceId')
               const semanticId = requireBoundedString(segments[2], 'semanticId')
               const version = optionalPositiveInteger(url.searchParams.get('version'), 'version', Number.MAX_SAFE_INTEGER)
-              writeJson(200, { ok: true, semantic: scope.dataAgentCatalog.getSemantic(sourceId, semanticId, version) })
+              writeJson(200, { ok: true, semantic: account.catalog.getSemantic(sourceId, semanticId, version) })
               return
             }
 
             if (req.method === 'POST' && routePathIs(segments, 'catalog', 'semantics')) {
               const body = catalogSemanticSaveBodySchema.parse(await readJson(req))
-              const semantic = await scope.dataAgentCatalogReview.saveCandidate(
+              const semantic = await account.review.saveCandidate(
                 body.sourceId, body.definition, body.semanticId, body.expectedVersion,
               )
               writeJson(200, { ok: true, semantic })
@@ -297,7 +306,7 @@ export function apply(ctx: Context, _config: Config): void {
             if (req.method === 'POST' && segments.length === 4 && segments[0] === 'catalog'
                 && segments[1] === 'semantics' && segments[3] === 'verify') {
               const body = catalogSemanticVerifyBodySchema.parse(await readJson(req))
-              const semantic = await scope.dataAgentCatalogReview.verify(
+              const semantic = await account.review.verify(
                 body.sourceId, requireBoundedString(segments[2], 'semanticId'), body.expectedVersion, body.definition,
               )
               writeJson(200, { ok: true, semantic })
@@ -307,7 +316,7 @@ export function apply(ctx: Context, _config: Config): void {
             if (req.method === 'POST' && segments.length === 4 && segments[0] === 'catalog'
                 && segments[1] === 'semantics' && segments[3] === 'retire') {
               const body = catalogSemanticRetireBodySchema.parse(await readJson(req))
-              const semantic = await scope.dataAgentCatalogReview.retire(
+              const semantic = await account.review.retire(
                 body.sourceId, requireBoundedString(segments[2], 'semanticId'), body.expectedVersion, body.revisionNote,
               )
               writeJson(200, { ok: true, semantic })
@@ -317,7 +326,7 @@ export function apply(ctx: Context, _config: Config): void {
             if (req.method === 'POST' && segments.length === 4 && segments[0] === 'catalog'
                 && segments[1] === 'semantics' && segments[3] === 'dismiss') {
               const body = catalogSemanticDismissBodySchema.parse(await readJson(req))
-              const semantic = await scope.dataAgentCatalogReview.dismissMeaning(
+              const semantic = await account.review.dismissMeaning(
                 body.sourceId, requireBoundedString(segments[2], 'semanticId'), body.expectedVersion,
               )
               writeJson(200, { ok: true, semantic })
@@ -326,7 +335,9 @@ export function apply(ctx: Context, _config: Config): void {
 
             writeJson(404, { error: 'unknown data-agent route' })
           } catch (error) {
-            const status = error instanceof CatalogVersionConflictError ? 409 : 400
+            const status = error instanceof MissingPrincipalError
+              ? 401
+              : error instanceof CatalogVersionConflictError ? 409 : 400
             writeJson(status, {
               error: sanitizeCatalogRouteError(error instanceof Error ? error.message : String(error)),
               ...error instanceof CatalogVersionConflictError ? { current: error.current } : {},

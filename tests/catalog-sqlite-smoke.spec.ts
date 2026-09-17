@@ -11,6 +11,7 @@ import { createCatalogService } from '../src/catalog.ts'
 import { createMemoryCatalogPersistence } from '../src/catalog-storage.ts'
 import { applyCatalogTools } from '../src/catalog-tools.ts'
 import { createConnectionService } from '../src/connections.ts'
+import { testAccounts } from './support/accounts.ts'
 
 interface ToolFace {
   name?: string
@@ -140,6 +141,7 @@ describe('real SQLite Catalog smoke', () => {
       const definitions = new Map<string, ToolFace>()
       applyCatalogTools({
         dataAgentCatalog: catalog.read,
+        dataAgentAccounts: testAccounts({ catalog: catalog.read }),
         tools: { register(definition: ToolFace) { definitions.set(definition.name!, definition) } },
       } as never)
       expect([...definitions.keys()].sort()).toEqual(['catalog-get', 'catalog-search', 'metric-get'])

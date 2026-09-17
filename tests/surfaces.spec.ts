@@ -177,6 +177,8 @@ describe('Web/TUI package and preset composition', () => {
       logger: { info() {}, warn() {} },
       provide(name: string) { if (name === 'dataAgentConnections') provided = true },
       effect() {},
+      // No requestPrincipal provider: this deployment is not account-isolated.
+      get() { return undefined },
       inject() { throw new Error('persistConnections=false must not wait for storageDomain') },
     }
     await apply(ctx, Config({ installPreset: false, persistConnections: false }))

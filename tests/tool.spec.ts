@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createConnectionStore, type DatabaseConnection } from '../src/connections.ts'
 import { apply, type Config } from '../src/tool.ts'
+import { testAccounts } from './support/accounts.ts'
 
 /** A fake subprocess service capturing the last spawn spec. */
 interface FakeHandle {
@@ -58,6 +59,7 @@ function makeContext(overrides: {
       })),
     },
     dataAgentConnections: connections,
+    dataAgentAccounts: testAccounts({ connections }),
     get(name: string): unknown {
       return name === 'webServer' && overrides.webServer === true ? {} : undefined
     },

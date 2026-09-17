@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream'
 import { describe, expect, it } from 'vitest'
 import { apply, validateConnectBody, type Config } from '../src/routes.ts'
+import { testAccounts } from './support/accounts.ts'
 
 const config: Config = {
   connectTimeoutMs: 5_000,
@@ -88,6 +89,7 @@ function routeFixture(ready = true) {
     dataAgentCatalog: catalog,
     dataAgentCatalogScanner: scanner,
     dataAgentCatalogReview: review,
+    dataAgentAccounts: testAccounts({ connections: service, catalog, scanner, review }),
     webServer: {
       register(route: { handler: typeof handler }) { handler = route.handler; return () => {} },
     },

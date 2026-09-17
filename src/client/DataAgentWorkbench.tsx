@@ -298,7 +298,8 @@ export function DataAgentWorkbench({
   )
   const [credentialStatus, setCredentialStatus] = useState<{ configured: boolean; source?: string } | undefined>()
   const [rememberPassword, setRememberPassword] = useState(initialSaved?.persistPassword === true)
-  const [readonly, setReadonly] = useState(initialSaved?.readonly === true)
+  // New connections start read-only; only an explicitly saved false opts out.
+  const [readonly, setReadonly] = useState(initialSaved?.readonly !== false)
   const [database, setDatabase] = useState(initialSaved?.database ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)

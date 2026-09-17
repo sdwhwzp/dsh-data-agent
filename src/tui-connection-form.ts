@@ -110,7 +110,8 @@ export function createTuiConnectionFormState(initialDraft?: ConnectionFormInitia
     password: '',
     passwordRef: initialDraft?.passwordRef ?? '',
     secure: initialDraft?.secure ?? false,
-    readonly: initialDraft?.readonly ?? false,
+    // Matches the service default: a new connection is read-only.
+    readonly: initialDraft?.readonly ?? true,
     focus: 'type',
     cursor: 0,
   }

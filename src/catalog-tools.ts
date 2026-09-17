@@ -2,6 +2,7 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { executionScope } from './accounts.ts'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import {
   DEFAULT_CATALOG_TOOL_TOP_K,
@@ -68,8 +69,9 @@ export function applyCatalogTools(ctx: Context): void {
     async execute(args, exec) {
       const sessionId = requireAgentId(exec.agent?.id, 'catalog-search')
       const topK = boundedInteger(args.topK, DEFAULT_CATALOG_TOOL_TOP_K, MAX_CATALOG_TOOL_TOP_K, 'topK')
-      const source = await ctx.dataAgentCatalog.resolveSource(sessionId, args.sourceId)
-      const page = await ctx.dataAgentCatalog.search({
+      const { catalog } = await executionScope(ctx, exec, 'catalog-search')
+      const source = await catalog.resolveSource(sessionId, args.sourceId)
+      const page = await catalog.search({
         query: args.query,
         filters: {
           sourceId: source.id,
@@ -122,9 +124,10 @@ export function applyCatalogTools(ctx: Context): void {
     presentCall: args => ({ card: 'generic', kind: 'read', title: `catalog-get ${oneLine(args.assetId)}` }),
     async execute(args, exec) {
       const sessionId = requireAgentId(exec.agent?.id, 'catalog-get')
-      const source = await ctx.dataAgentCatalog.resolveSource(sessionId, args.sourceId)
+      const { catalog } = await executionScope(ctx, exec, 'catalog-get')
+      const source = await catalog.resolveSource(sessionId, args.sourceId)
       const pageSize = boundedInteger(args.pageSize, 50, MAX_CATALOG_PAGE_SIZE, 'pageSize')
-      const detail = ctx.dataAgentCatalog.getAsset(source.id, args.assetId, args.cursor, pageSize)
+      const detail = catalog.getAsset(source.id, args.assetId, args.cursor, pageSize)
       return sanitizeToolValue({
         sourceId: source.id,
         assetId: args.assetId,
@@ -166,12 +169,13 @@ export function applyCatalogTools(ctx: Context): void {
     presentCall: args => ({ card: 'generic', kind: 'read', title: `metric-get ${oneLine(args.metricId)}` }),
     async execute(args, exec) {
       const sessionId = requireAgentId(exec.agent?.id, 'metric-get')
-      const source = await ctx.dataAgentCatalog.resolveSource(sessionId, args.sourceId)
+      const { catalog } = await executionScope(ctx, exec, 'metric-get')
+      const source = await catalog.resolveSource(sessionId, args.sourceId)
       if (args.version !== undefined && (!Number.isInteger(args.version) || args.version < 1)) {
         throw new Error('metric-get: version must be a positive integer')
       }
-      const revision = ctx.dataAgentCatalog.getMetric(source.id, args.metricId, args.version)
-      const current = ctx.dataAgentCatalog.getMetric(source.id, args.metricId)
+      const revision = catalog.getMetric(source.id, args.metricId, args.version)
+      const current = catalog.getMetric(source.id, args.metricId)
       return sanitizeToolValue({
         sourceId: source.id,
         metricId: revision.semanticId,

@@ -42,25 +42,21 @@ declare module '@deepseek-ai/cordis' {
 }
 import z from 'schemastery'
 import {
-  createConnectionService,
   type DataAgentConnections,
   type DatabaseConnection,
   type DatabaseType,
 } from './connections.ts'
 import { clientsSchema, type CliDatabaseType, type ClientConfig } from './clients.ts'
 import {
-  createCatalogService,
   type DataAgentCatalog,
   type DataAgentCatalogReview,
   type DataAgentCatalogScanner,
 } from './catalog.ts'
-import { createDshCatalogMeaningGenerator } from './catalog-ai.ts'
 import {
-  catalogStorageSpec,
-  createDomainCatalogPersistence,
-  createMemoryCatalogPersistence,
-  type CatalogPersistence,
-} from './catalog-storage.ts'
+  createDataAgentAccounts,
+  type DataAgentScope,
+} from './accounts.ts'
+import { MissingPrincipalError } from './owner.ts'
 import {
   DEFAULT_CATALOG_ASSET_CONCURRENCY,
   DEFAULT_CATALOG_MAX_ASSETS,
@@ -82,7 +78,6 @@ import {
   apply as applyDatabaseCommand,
   type DataAgentCommandAdapterOptions,
 } from './command.ts'
-import { connectionStorageSpec, createDomainConnectionPersistence } from './storage.ts'
 import { apply as applyDatabaseTools, type Config as ToolConfig } from './tool.ts'
 
 export type {
@@ -377,6 +372,45 @@ export async function mountPresetCapabilities(
   applyDatabaseCommand(scoped, commandOptions)
 }
 
+/** Install one scope's services on the Context seats consumers inject. */
+function provideScope(ctx: Context, scope: DataAgentScope): void {
+  ctx.provide('dataAgentConnections', scope.connections)
+  ctx.provide('dataAgentCatalog', scope.catalog)
+  ctx.provide('dataAgentCatalogScanner', scope.scanner)
+  ctx.provide('dataAgentCatalogReview', scope.review)
+}
+
+/**
+ * A service seat that names no account.
+ *
+ * Reading any member throws: an account-isolated deployment has no account-free
+ * connection store or Catalog, and a caller reaching for one has skipped
+ * `ctx.dataAgentAccounts`. A Proxy rather than an object literal so a member
+ * added to the service later cannot silently become an unattributed seam.
+ * Symbols and the promise/inspection probes Cordis and Node perform on any
+ * provided value pass through to the empty target, because those are not
+ * service use and must not fail a `ctx.provide` or a console inspection.
+ * @param service - context property name, for the refusal message.
+ * @returns a stand-in satisfying the service type.
+ */
+function accountGuard<T extends object>(service: string): T {
+  const probes = new Set(['then', 'toJSON', 'inspect', 'constructor'])
+  return new Proxy({} as T, {
+    get(target, member, receiver) {
+      if (typeof member === 'symbol' || probes.has(member)) return Reflect.get(target, member, receiver)
+      throw new MissingPrincipalError(`ctx.${service}.${member}`)
+    },
+  })
+}
+
+/** Occupy the account-free seats on an isolated deployment so `ctx.inject` resolves. */
+function provideAccountGuards(ctx: Context): void {
+  ctx.provide('dataAgentConnections', accountGuard<DataAgentConnections>('dataAgentConnections'))
+  ctx.provide('dataAgentCatalog', accountGuard<DataAgentCatalog>('dataAgentCatalog'))
+  ctx.provide('dataAgentCatalogScanner', accountGuard<DataAgentCatalogScanner>('dataAgentCatalogScanner'))
+  ctx.provide('dataAgentCatalogReview', accountGuard<DataAgentCatalogReview>('dataAgentCatalogReview'))
+}
+
 interface StandingScopeRecord {
   key: ScopeKey
   scope: { ctx: Context }
@@ -440,85 +474,61 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     connections: config.connections,
   }
 
-  const mountService = (
-    scope: Context,
-    persistence?: ReturnType<typeof createDomainConnectionPersistence>,
-    preferredProfileIds?: () => readonly string[],
-  ): DataAgentConnections => {
-    const store = createConnectionService(scope, {
-      connectTimeoutMs: resolved.connectTimeoutMs,
-      queryTimeoutMs: resolved.queryTimeoutMs,
-      catalogQueryTimeoutMs: resolved.catalogQueryTimeoutMs,
-      catalogMaxResultChars: resolved.catalogMaxResultChars,
-      maxResultChars: resolved.maxResultChars,
-      maxQueryChars: resolved.maxQueryChars,
-      introspectMaxTables: resolved.introspectMaxTables,
-      readonly: resolved.readonly,
-      clients: resolved.clients,
-      ...preferredProfileIds !== undefined ? { preferredProfileIds } : {},
-    }, persistence)
-    scope.provide('dataAgentConnections', store)
-
-    // Config seeds remain runtime-only deployment defaults. They accept a
-    // reference but never a real password and preserve wildcard fallback.
-    for (const [sessionId, spec] of Object.entries(resolved.connections)) {
-      const connection: DatabaseConnection = {
-        type: spec.type,
-        database: spec.type === 'sqlite' ? resolve(process.cwd(), spec.database) : spec.database,
-        ...spec.host !== undefined ? { host: spec.host } : {},
-        ...spec.port !== undefined ? { port: spec.port } : {},
-        ...spec.user !== undefined ? { user: spec.user } : {},
-        ...spec.passwordRef !== undefined ? { passwordRef: spec.passwordRef } : {},
-        ...spec.readonly !== undefined ? { readonly: spec.readonly } : {},
-        ...spec.secure !== undefined ? { secure: spec.secure } : {},
-      }
-      store.set(sessionId, connection)
-    }
-    return store
-  }
-
   const presetReady = resolved.installPreset
     ? await installPreset(ctx, resolved.presetId)
     : false
 
-  let connectionPersistence: ReturnType<typeof createDomainConnectionPersistence> | undefined
-  let catalogPersistence: CatalogPersistence
-  if (resolved.persistConnections) {
-    const storageDomain = await ensureStorageDomain(ctx)
-    const domain = await storageDomain.open(connectionStorageSpec)
-    ctx.effect(() => () => domain.close(), 'data-agent: close connection storage domain')
-    connectionPersistence = createDomainConnectionPersistence(domain)
-    const catalogDomain = await storageDomain.open(catalogStorageSpec)
-    ctx.effect(() => () => catalogDomain.close(), 'data-agent: close Catalog storage domain')
-    catalogPersistence = createDomainCatalogPersistence(catalogDomain)
-  } else {
+  if (!resolved.persistConnections) {
     ctx.logger.warn('data-agent: persistConnections=false; connection and Catalog state are process-local and cannot restore across Web/TUI')
-    catalogPersistence = createMemoryCatalogPersistence()
   }
 
-  // Catalog source ids are durable identities. Prefer their exact matching
-  // connection profile even when an older installation created it with a
-  // session-prefixed id; this keeps later sessions on the same Catalog.
-  const connectionService = mountService(
-    ctx,
-    connectionPersistence,
-    () => catalogPersistence.listSources().map(source => source.profileId),
-  )
+  // Config seeds remain runtime-only deployment defaults. They accept a
+  // reference but never a real password and preserve wildcard fallback.
+  const seeds: Record<string, DatabaseConnection> = {}
+  for (const [sessionId, spec] of Object.entries(resolved.connections)) {
+    seeds[sessionId] = {
+      type: spec.type,
+      database: spec.type === 'sqlite' ? resolve(process.cwd(), spec.database) : spec.database,
+      ...spec.host !== undefined ? { host: spec.host } : {},
+      ...spec.port !== undefined ? { port: spec.port } : {},
+      ...spec.user !== undefined ? { user: spec.user } : {},
+      ...spec.passwordRef !== undefined ? { passwordRef: spec.passwordRef } : {},
+      ...spec.readonly !== undefined ? { readonly: spec.readonly } : {},
+      ...spec.secure !== undefined ? { secure: spec.secure } : {},
+    }
+  }
 
-  const catalog = await createCatalogService(connectionService, catalogPersistence, {
-    maxAssetsPerRun: resolved.catalogMaxAssetsPerRun,
-    maxTextChars: resolved.catalogMaxTextChars,
-    pageSize: resolved.catalogPageSize,
-    maxPageSize: resolved.catalogMaxPageSize,
-    schemaConcurrency: resolved.catalogSchemaConcurrency,
-    assetConcurrency: resolved.catalogAssetConcurrency,
-    meaningGenerator: createDshCatalogMeaningGenerator(ctx.agents, ctx.llm),
-    logger: ctx.logger,
-  })
-  ctx.provide('dataAgentCatalog', catalog.read)
-  ctx.provide('dataAgentCatalogScanner', catalog.scanner)
-  ctx.provide('dataAgentCatalogReview', catalog.review)
-  ctx.effect(() => () => catalog.scanner.interruptActiveRuns(), 'data-agent: interrupt active Catalog scans')
+  const accounts = createDataAgentAccounts(ctx, {
+    connectTimeoutMs: resolved.connectTimeoutMs,
+    queryTimeoutMs: resolved.queryTimeoutMs,
+    catalogQueryTimeoutMs: resolved.catalogQueryTimeoutMs,
+    catalogMaxResultChars: resolved.catalogMaxResultChars,
+    maxResultChars: resolved.maxResultChars,
+    maxQueryChars: resolved.maxQueryChars,
+    introspectMaxTables: resolved.introspectMaxTables,
+    readonly: resolved.readonly,
+    clients: resolved.clients,
+    catalogMaxAssetsPerRun: resolved.catalogMaxAssetsPerRun,
+    catalogMaxTextChars: resolved.catalogMaxTextChars,
+    catalogPageSize: resolved.catalogPageSize,
+    catalogMaxPageSize: resolved.catalogMaxPageSize,
+    catalogSchemaConcurrency: resolved.catalogSchemaConcurrency,
+    catalogAssetConcurrency: resolved.catalogAssetConcurrency,
+    persistConnections: resolved.persistConnections,
+    seeds,
+  }, resolved.persistConnections ? await ensureStorageDomain(ctx) : undefined)
+  ctx.provide('dataAgentAccounts', accounts)
+
+  // An unisolated deployment keeps the single account-free services it has
+  // always had. An account-isolated one has no account-free instance to hand
+  // out: every caller names its account through `ctx.dataAgentAccounts`, and
+  // these seats exist only so `ctx.inject` still resolves.
+  if (accounts.isolated()) {
+    provideAccountGuards(ctx)
+  } else {
+    const shared = await accounts.forPrincipal(undefined, 'startup')
+    provideScope(ctx, shared)
+  }
 
   if (presetReady) {
     const standingKey = await ctx.agentPresets.standingKeyFor(resolved.presetId)

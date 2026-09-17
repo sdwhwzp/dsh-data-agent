@@ -82,7 +82,8 @@ describe('dsh-tui connection form', () => {
     transition = updateTuiConnectionForm(transition.state, { name: 'down' })
     transition = updateTuiConnectionForm(transition.state, { name: 'escape' })
     expect(transition.kind).toBe('editing')
-    expect(transition.state.readonly).toBe(false)
+    // Escape cancels the selector, so the read-only default survives.
+    expect(transition.state.readonly).toBe(true)
     expect(transition.state.selector).toBeUndefined()
   })
 
@@ -100,7 +101,7 @@ describe('dsh-tui connection form', () => {
       port: 3306,
       user: 'app',
       database: 'orders',
-      readonly: false,
+      readonly: true,
     })
   })
 
@@ -261,7 +262,7 @@ describe('dsh-tui connection form', () => {
     await expect(result).resolves.toEqual({
       type: 'sqlite',
       database: 'database.db',
-      readonly: false,
+      readonly: true,
     })
     expect(recoveredInput).toEqual(['\u000C'])
   })
@@ -281,7 +282,8 @@ describe('dsh-tui connection form', () => {
       user: 'root',
       database: 'orders',
       password: 'tui-secret',
-      readonly: true,
+      // The readonly selector is opened and moved off its default here.
+      readonly: false,
     })
     expect(output.writes.join('')).not.toContain('tui-secret')
   })

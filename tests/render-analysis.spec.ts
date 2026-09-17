@@ -6,6 +6,7 @@ import { createConnectionStore, type DatabaseConnection } from '../src/connectio
 import { apply, type Config } from '../src/tool.ts'
 import type { AnalysisReportV1 } from '../src/analysis.ts'
 import { parseAnalysisReport } from '../src/analysis.ts'
+import { testAccounts } from './support/accounts.ts'
 
 interface SpawnSpec {
   argv: readonly string[]
@@ -89,6 +90,7 @@ function makeContext(options: {
       },
     },
     dataAgentConnections: connections,
+    dataAgentAccounts: testAccounts({ connections }),
     get(name: string) {
       if (name === 'webServer') return {}
       return undefined

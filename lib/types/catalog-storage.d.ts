@@ -157,7 +157,7 @@ export declare const catalogStorageSpec: {
         semantic_entries: import("@deepseek-ai/dsh-storage-domain").DomainTableSpec<string, {
             id: string;
             sourceId: string;
-            kind: "metric" | "meaning" | "term";
+            kind: "meaning" | "term" | "metric";
             currentVersion: number;
             createdAt: string;
             updatedAt: string;
@@ -229,6 +229,16 @@ export declare const catalogStorageSpec: {
         index_state: import("@deepseek-ai/dsh-storage-domain").DomainTableSpec<string, CatalogIndexState>;
     };
 };
+/**
+ * The same layout under one account's private domain name.
+ *
+ * Catalog rows carry table names, column meanings and sampled metric text read
+ * out of a real database, so they are isolated exactly like the connection
+ * profiles that produced them (see `./owner.ts`).
+ * @param ownerKey - the account's key from `ownerKeyOf`.
+ * @returns the domain spec for that account.
+ */
+export declare function accountCatalogStorageSpec(ownerKey: string): typeof catalogStorageSpec;
 export type CatalogStorageDomain = Domain<typeof catalogStorageSpec>;
 export interface CatalogPersistence {
     getSource(id: string): CatalogSource | undefined;

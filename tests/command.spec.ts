@@ -7,6 +7,7 @@ import {
   parseConnectArguments,
 } from '../src/command.ts'
 import type { ConnectionFormDraft, ConnectionFormInitial } from '../src/connections.ts'
+import { testAccounts } from './support/accounts.ts'
 
 function invocation(rawInput: string, id = 'agent-a') {
   return {
@@ -56,6 +57,7 @@ function commandContext(options?: { questions?: { ask(request: { questions: { id
       },
     },
     dataAgentConnections: service,
+    dataAgentAccounts: testAccounts({ connections: service }),
     get(name: string) { return name === 'userQuestions' ? options?.questions : undefined },
     emit(event: string) { emitted.push(event) },
     effect() {},

@@ -15,6 +15,7 @@ import SubprocessLocal from '@deepseek-ai/dsh-subprocess-local'
 import { apply, type Config } from '../src/tool.ts'
 import type { AnalysisReportV1 } from '../src/analysis.ts'
 import { parseAnalysisReport } from '../src/analysis.ts'
+import { testAccounts } from './support/accounts.ts'
 
 interface ToolDefinitionFace {
   name?: string
@@ -75,6 +76,9 @@ describe('real sqlite smoke through the shared tool half', () => {
             },
           },
           dataAgentConnections: { resolveForExecution: async () => ({ type: 'sqlite', database: db }) },
+          dataAgentAccounts: testAccounts({
+            connections: { resolveForExecution: async () => ({ type: 'sqlite', database: db }) },
+          }),
           tools: {
             register(def: ToolDefinitionFace) {
               if (def.name === 'render-analysis') captured = def

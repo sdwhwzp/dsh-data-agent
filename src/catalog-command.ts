@@ -5,6 +5,7 @@ import type { CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands
 import type {} from '@deepseek-ai/dsh-user-questions'
 import type { CatalogDiffPage, CatalogScope } from './catalog-types.ts'
 import type {} from './index.ts'
+import type { DataAgentScope } from './accounts.ts'
 
 export const CATALOG_COMMAND_USAGE = [
   '用法：',
@@ -48,13 +49,16 @@ export async function executeCatalogCommand(
   try {
     const action = parseCatalogAction(invocation.rawInput)
     const sessionId = String(invocation.agent.id)
+    // See `executeDatabaseCommand`: the dispatch, not the invocation, carries
+    // the account. Unisolated dsh-tui deployments resolve the shared scope.
+    const account = await ctx.dataAgentAccounts.forDispatch('/catalog')
     switch (action.kind) {
       case 'scan': {
         const scope = action.scope ?? await askForCatalogScope(ctx, invocation)
         if (scope === undefined) {
           return { kind: 'error', text: `当前界面没有可用的问答 provider；未开始扫描。\n\n${CATALOG_COMMAND_USAGE}` }
         }
-        const run = await ctx.dataAgentCatalogScanner.start({ sessionId, scope })
+        const run = await account.scanner.start({ sessionId, scope })
         presentation?.watch(run)
         return {
           kind: 'success',
@@ -62,13 +66,13 @@ export async function executeCatalogCommand(
         }
       }
       case 'status': {
-        const sourceId = await resolveCommandSourceId(ctx, sessionId)
+        const sourceId = await resolveCommandSourceId(account, sessionId)
         if (sourceId === undefined) return { kind: 'success', text: `当前没有Catalog source或扫描记录。\n\n${CATALOG_COMMAND_USAGE}` }
-        const status = ctx.dataAgentCatalog.status(sourceId)
+        const status = account.catalog.status(sourceId)
         if (status === undefined) return { kind: 'success', text: `source ${sourceId} 尚未扫描。\n\n${CATALOG_COMMAND_USAGE}` }
         const run = action.runId === undefined
           ? status.activeRun ?? status.latestRun
-          : ctx.dataAgentCatalog.listRuns(sourceId, 200).find(candidate => candidate.id === action.runId)
+          : account.catalog.listRuns(sourceId, 200).find(candidate => candidate.id === action.runId)
         if (action.runId !== undefined && run === undefined) {
           return { kind: 'error', text: `未找到 Catalog run ${action.runId}（仅查询最近 200 条记录）。` }
         }
@@ -96,13 +100,13 @@ export async function executeCatalogCommand(
         return { kind: 'success', text: lines.join('\n') }
       }
       case 'cancel': {
-        const sourceId = await requireCommandSourceId(ctx, sessionId)
-        const run = await ctx.dataAgentCatalogScanner.cancel(sourceId, action.runId)
+        const sourceId = await requireCommandSourceId(account, sessionId)
+        const run = await account.scanner.cancel(sourceId, action.runId)
         return { kind: 'success', text: `已请求取消 Catalog run ${run.id}；当前状态 ${run.status}。` }
       }
       case 'diff': {
-        const sourceId = await requireCommandSourceId(ctx, sessionId)
-        const diff = ctx.dataAgentCatalog.diff(sourceId, action.fromRunId, action.toRunId, undefined, 50)
+        const sourceId = await requireCommandSourceId(account, sessionId)
+        const diff = account.catalog.diff(sourceId, action.fromRunId, action.toRunId, undefined, 50)
         return { kind: 'success', text: formatCatalogDiff(diff) }
       }
       case 'view': {
@@ -218,15 +222,15 @@ async function askForCatalogScope(ctx: Context, invocation: CommandInvocation): 
   }
 }
 
-async function resolveCommandSourceId(ctx: Context, sessionId: string): Promise<string | undefined> {
-  const connected = ctx.dataAgentConnections.get(sessionId)?.profileId
-  if (connected !== undefined && ctx.dataAgentCatalog.status(connected) !== undefined) return connected
-  const sources = ctx.dataAgentCatalog.listSources()
+async function resolveCommandSourceId(account: DataAgentScope, sessionId: string): Promise<string | undefined> {
+  const connected = account.connections.get(sessionId)?.profileId
+  if (connected !== undefined && account.catalog.status(connected) !== undefined) return connected
+  const sources = account.catalog.listSources()
   return sources.length === 1 ? sources[0]!.id : undefined
 }
 
-async function requireCommandSourceId(ctx: Context, sessionId: string): Promise<string> {
-  const sourceId = await resolveCommandSourceId(ctx, sessionId)
+async function requireCommandSourceId(account: DataAgentScope, sessionId: string): Promise<string> {
+  const sourceId = await resolveCommandSourceId(account, sessionId)
   if (sourceId === undefined) throw new Error('无法确定 Catalog source；请连接对应profile或在Web选择source')
   return sourceId
 }

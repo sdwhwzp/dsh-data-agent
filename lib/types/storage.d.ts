@@ -78,6 +78,18 @@ export declare const connectionStorageSpec: {
         drafts: import("@deepseek-ai/dsh-storage-domain").DomainTableSpec<string, PersistedConnectionFormDraft>;
     };
 };
+/**
+ * The same layout under one account's private domain name.
+ *
+ * An account-isolated deployment opens one of these per authenticated account
+ * instead of {@link connectionStorageSpec}, so a profile, binding or draft of
+ * another account is not merely filtered out of a result but absent from the
+ * medium the query reads (see `./owner.ts`). The unsuffixed name stays reserved
+ * for unisolated deployments, which therefore need no migration.
+ * @param ownerKey - the account's key from `ownerKeyOf`.
+ * @returns the domain spec for that account.
+ */
+export declare function accountConnectionStorageSpec(ownerKey: string): typeof connectionStorageSpec;
 export type ConnectionStorageDomain = Domain<typeof connectionStorageSpec>;
 /** Select the newest successful profile with a deterministic id tie-break. */
 export declare function latestConnectionProfile(entries: Iterable<readonly [string, PersistedConnectionProfile]>): PersistedConnectionProfileEntry | undefined;

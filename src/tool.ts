@@ -27,6 +27,7 @@ import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import type {} from '@deepseek-ai/dsh-subprocess'
 import type {} from './index.ts'
 import { classifyStatement, clientsSchema, enforceReadRowLimit, type ClientConfig } from './clients.ts'
+import type { DatabaseConnection } from './connections.ts'
 import {
   DEFAULT_MAX_QUERY_CHARS,
   DEFAULT_MAX_RESULT_CHARS,
@@ -98,6 +99,36 @@ interface StructuredSqlResult {
   affectedRows: number
   elapsedMs: number
   truncated: boolean
+}
+
+/**
+ * Record one write that a writable connection admitted.
+ *
+ * Only the admitted case is recorded: a refusal already ends the tool call with
+ * its own message, while an accepted write changes a real database and is the
+ * event an operator has to be able to reconstruct afterwards. The line carries
+ * the account, session, profile and endpoint — never the SQL text, which is
+ * already in the session log, and never the credential.
+ * @param ctx - the tool row's Context, which owns the logger.
+ * @param toolName - the tool that admitted the statement.
+ * @param exec - the running execution, for account and session attribution.
+ * @param connection - the resolved target of the statement.
+ */
+function auditWrite(
+  ctx: Context,
+  toolName: string,
+  exec: { agent?: { id: string } },
+  connection: DatabaseConnection,
+): void {
+  const principal = (exec as { principal?: { source: string; id: string; username?: string } }).principal
+  ctx.logger.info(
+    'data-agent %s 写操作：account=%s session=%s profile=%s target=%s',
+    toolName,
+    principal === undefined ? '未认证' : `${principal.source}:${principal.id}`,
+    exec.agent?.id ?? '未知',
+    connection.profileId ?? '未绑定',
+    `${connection.type}://${connection.host ?? 'local'}/${connection.database}`,
+  )
 }
 
 /** One-line tool-call label (newlines collapsed). */
@@ -363,6 +394,7 @@ export function apply(ctx: Context, config: Config): void {
       if (readonly) {
         throw new Error('当前连接为只读模式，sql-write 拒绝执行写/管理语句（仅放行 SELECT/SHOW/DESCRIBE/EXPLAIN/查询型 PRAGMA 等）')
       }
+      auditWrite(ctx, 'sql-write', exec, connection)
       return runRedactedClientQuery(ctx, connection, args.sql, runnerOptions(resolved), exec.signal)
     },
   }))
@@ -411,7 +443,9 @@ export function apply(ctx: Context, config: Config): void {
       if (readonly && classifyStatement(args.sql, connection.type) === 'write') {
         throw new Error('当前连接为只读模式，sql-cmd 拒绝执行非读语句（仅放行 SELECT/SHOW/DESCRIBE/EXPLAIN/查询型 PRAGMA 等）')
       }
-      const sql = classifyStatement(args.sql, connection.type) === 'read'
+      const isRead = classifyStatement(args.sql, connection.type) === 'read'
+      if (!isRead) auditWrite(ctx, 'sql-cmd', exec, connection)
+      const sql = isRead
         ? enforceReadRowLimit(args.sql, connection.type, resolved.maxRows)
         : args.sql
       return runRedactedClientQuery(ctx, connection, sql, runnerOptions(resolved), exec.signal)
