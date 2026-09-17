@@ -90,6 +90,7 @@ function routeFixture(ready = true) {
     dataAgentCatalogScanner: scanner,
     dataAgentCatalogReview: review,
     dataAgentAccounts: testAccounts({ connections: service, catalog, scanner, review }),
+    dataAgentPresets: { ids: ['data-agent', 'code'] },
     webServer: {
       register(route: { handler: typeof handler }) { handler = route.handler; return () => {} },
     },
@@ -119,6 +120,14 @@ async function dispatch(handler: (req: any, res: any) => Promise<void>, method: 
 }
 
 describe('Web route adapter', () => {
+  it('reports which presets carry the database tools', async () => {
+    const fixture = routeFixture()
+    // The browser half shows its workbench control only for these, so a
+    // deployment that mounted the tools into a second preset must say so.
+    expect((await dispatch(fixture.handler, 'GET', '/plugins/data-agent/presets')).body)
+      .toEqual({ ok: true, presets: ['data-agent', 'code'] })
+  })
+
   it('validates passwordRef/profile fields and rejects two secret sources', () => {
     expect(validateConnectBody({
       sessionId: 's', type: 'mysql', database: 'orders', passwordRef: 'DB_PASSWORD',

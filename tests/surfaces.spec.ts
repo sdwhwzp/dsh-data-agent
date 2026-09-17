@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { Config, apply, missingProfileDependencyMessage } from '../src/index.ts'
+import { Config, apply, missingProfileDependencyMessage, mountPresetTools } from '../src/index.ts'
 import { apply as applyToolHalf } from '../src/tool.ts'
 import { apply as applyCommandHalf, DATA_AGENT_TOOL_NAMES } from '../src/command.ts'
 import { createConnectionStore } from '../src/connections.ts'
@@ -245,5 +245,56 @@ describe('render-analysis cross-surface registration', () => {
     const command = readFileSync(new URL('src/command.ts', root), 'utf8')
     expect(command).not.toContain("ctx.on('agent/created'")
     expect(command).not.toContain("name: 'analysis'")
+  })
+})
+
+describe('database tools in a preset this package does not own', () => {
+  it('mounts the tool half alone, leaving the host preset its own tools and commands', async () => {
+    const registered: string[] = []
+    const restrictions: unknown[] = []
+    const commands: string[] = []
+    const standing = { key: Symbol('standing'), tag: Symbol('scope') }
+    const ctx: any = {
+      logger: { info() {}, warn() {} },
+      tools: {
+        register(def: { name?: string }) { registered.push(def.name ?? '?'); return () => {} },
+        restrict(filter: unknown) { restrictions.push(filter) },
+        schemas() { return [{ name: 'read' }, { name: 'bash' }] },
+      },
+      commands: { register(def: { name: string }) { commands.push(def.name); return () => {} } },
+      agentPresets: {
+        standingKeyFor: async () => standing.key,
+        standing: new Map([['code', Promise.resolve({ key: standing.key, scope: { ctx: { [standing.tag]: standing.key } } })]]),
+      },
+      extend(values: Record<symbol, unknown>) { return { ...ctx, ...values } },
+      get() { return undefined },
+      effect() { return () => {} },
+      emit() {},
+      on() {},
+    }
+    await mountPresetTools(ctx, 'code', {
+      queryTimeoutMs: 5000, maxResultChars: 20000, maxRows: 100,
+      maxQueryChars: 65536, readonly: false, clients: {},
+    })
+    expect(registered).toEqual([
+      'sql-query', 'sql-write', 'sql-cmd', 'render-analysis',
+      'catalog-search', 'catalog-get', 'metric-get',
+    ])
+    // The owned data preset denies every inherited tool and registers
+    // /database and /catalog. A borrowed preset must keep both of its own.
+    expect(restrictions).toEqual([])
+    expect(commands).toEqual([])
+  })
+
+  it('refuses a preset that does not exist instead of silently skipping it', async () => {
+    const ctx: any = {
+      logger: { info() {}, warn() {} },
+      agentPresets: { standingKeyFor: async () => Symbol('key'), standing: new Map() },
+      get() { return undefined },
+    }
+    await expect(mountPresetTools(ctx, 'missing', {
+      queryTimeoutMs: 5000, maxResultChars: 20000, maxRows: 100,
+      maxQueryChars: 65536, readonly: false, clients: {},
+    })).rejects.toThrow(/has no standing scope/)
   })
 })

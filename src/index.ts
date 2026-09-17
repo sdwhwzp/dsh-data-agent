@@ -31,9 +31,23 @@ import * as storageDomainPlugin from '@deepseek-ai/dsh-storage-domain'
 import * as storageJsonPlugin from '@deepseek-ai/dsh-storage-json'
 import type {} from '@deepseek-ai/dsh-subprocess'
 
+/**
+ * Preset ids whose sessions carry the database tools.
+ *
+ * One home for the fact: the host row decides it from config, and the sibling
+ * routes row serves it to the browser so the Web workbench control appears in
+ * exactly the sessions that can actually run SQL.
+ */
+export interface DataAgentPresets {
+  /** Preset ids with the tool half mounted, owned preset first. */
+  readonly ids: readonly string[]
+}
+
 /** The `dataAgentConnections` service face on the cordis context. */
 declare module '@deepseek-ai/cordis' {
   interface Context {
+    /** Preset ids whose sessions carry the database tools. */
+    dataAgentPresets: DataAgentPresets
     dataAgentConnections: DataAgentConnections
     dataAgentCatalog: DataAgentCatalog
     dataAgentCatalogScanner: DataAgentCatalogScanner
@@ -158,6 +172,16 @@ export interface SeededConnectionConfig {
 export interface Config {
   /** Preset directory name installed under `$DSH_HOME/.agent-presets/`. */
   presetId: string
+  /**
+   * Further preset ids whose sessions also receive the database tools.
+   *
+   * Each named preset must already exist; this package installs and owns only
+   * {@link Config.presetId}. These presets receive the tool half ALONE — not
+   * the `/database` and `/catalog` commands, and not the inherited-tool
+   * restriction that makes the owned preset a closed data surface — so a
+   * general-purpose preset keeps its own tools and gains SQL beside them.
+   */
+  additionalToolPresets: string[]
   /** Whether to self-install the preset on startup (idempotent). */
   installPreset: boolean
   /** Deadline for one /connect connectivity check, milliseconds. */
@@ -199,6 +223,7 @@ export interface Config {
 /** Loader schema with deployment defaults (no library defaults). */
 export const Config = z.object({
   presetId: z.string().default(DEFAULT_PRESET_ID),
+  additionalToolPresets: z.array(z.string()).default([]),
   installPreset: z.boolean().default(true),
   connectTimeoutMs: z.number().step(1).min(1000).default(DEFAULT_CONNECT_TIMEOUT_MS),
   introspectMaxTables: z.number().step(1).min(1).default(DEFAULT_INTROSPECT_MAX_TABLES),
@@ -411,6 +436,28 @@ function provideAccountGuards(ctx: Context): void {
   ctx.provide('dataAgentCatalogReview', accountGuard<DataAgentCatalogReview>('dataAgentCatalogReview'))
 }
 
+/**
+ * Mount the tool half alone into one preset this package does not own.
+ *
+ * Deliberately narrower than {@link mountPresetCapabilities}: no `/database`
+ * or `/catalog` command, and no inherited-tool restriction. A general-purpose
+ * preset must keep every tool it already composes and merely gain SQL beside
+ * them, whereas the owned data preset is a closed surface by design.
+ * @param ctx - host Context that already provides the data-agent services.
+ * @param presetId - an existing preset that should also reach the database.
+ * @param config - the resolved tool-half settings.
+ * @throws when the preset does not exist, rather than silently skipping it.
+ */
+export async function mountPresetTools(
+  ctx: Context,
+  presetId: string,
+  config: PresetCapabilitiesConfig,
+): Promise<void> {
+  const key = await ctx.agentPresets.standingKeyFor(presetId)
+  const scopeTag = await standingScopeTag(ctx, presetId, key)
+  applyDatabaseTools(ctx.extend({ [scopeTag]: key }), config)
+}
+
 interface StandingScopeRecord {
   key: ScopeKey
   scope: { ctx: Context }
@@ -453,6 +500,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   }
   const resolved: Required<Config> = {
     presetId: config.presetId,
+    additionalToolPresets: config.additionalToolPresets,
     installPreset: config.installPreset,
     connectTimeoutMs: config.connectTimeoutMs,
     introspectMaxTables: config.introspectMaxTables,
@@ -530,18 +578,32 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     provideScope(ctx, shared)
   }
 
+  const toolConfig: PresetCapabilitiesConfig = {
+    queryTimeoutMs: resolved.queryTimeoutMs,
+    maxResultChars: resolved.maxResultChars,
+    maxRows: resolved.maxRows,
+    maxQueryChars: resolved.maxQueryChars,
+    readonly: resolved.readonly,
+    clients: resolved.clients,
+  }
+  const mounted: string[] = []
   if (presetReady) {
     const standingKey = await ctx.agentPresets.standingKeyFor(resolved.presetId)
     const scopeTag = await standingScopeTag(ctx, resolved.presetId, standingKey)
-    await mountPresetCapabilities(ctx, standingKey, scopeTag, {
-      queryTimeoutMs: resolved.queryTimeoutMs,
-      maxResultChars: resolved.maxResultChars,
-      maxRows: resolved.maxRows,
-      maxQueryChars: resolved.maxQueryChars,
-      readonly: resolved.readonly,
-      clients: resolved.clients,
-    })
+    await mountPresetCapabilities(ctx, standingKey, scopeTag, toolConfig)
+    mounted.push(resolved.presetId)
   }
+  for (const presetId of resolved.additionalToolPresets) {
+    if (presetId === resolved.presetId) {
+      throw new Error(`data-agent: additionalToolPresets repeats the owned preset "${presetId}"`)
+    }
+    // Fails loud: a named preset that does not exist is a misconfiguration, and
+    // silently skipping it would leave that preset's sessions with a Web
+    // workbench control and no tool able to use the connection it makes.
+    await mountPresetTools(ctx, presetId, toolConfig)
+    mounted.push(presetId)
+  }
+  ctx.provide('dataAgentPresets', { ids: mounted })
 }
 
 /**

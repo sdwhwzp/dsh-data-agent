@@ -108,7 +108,7 @@ export function validateConnectBody(value: unknown, cwd = process.cwd()): Connec
 /** Register Web routes only when both the webserver and shared service exist. */
 export function apply(ctx: Context, _config: Config): void {
   ctx.inject([
-    'webServer', 'dataAgentAccounts',
+    'webServer', 'dataAgentAccounts', 'dataAgentPresets',
     'dataAgentConnections', 'dataAgentCatalog', 'dataAgentCatalogScanner', 'dataAgentCatalogReview',
   ], (scope) => {
     scope.effect(() => {
@@ -130,6 +130,15 @@ export function apply(ctx: Context, _config: Config): void {
             // owns a private store, so a foreign session id, profile id or
             // Catalog source id finds nothing rather than someone else's row.
             const account = await scope.dataAgentAccounts.forRequest(req, 'data-agent 接口')
+
+            if (req.method === 'GET' && routeIs(segments, 'presets')) {
+              assertOnlySearchParams(url.searchParams, [])
+              // Which presets carry the database tools. The browser half shows
+              // its workbench control only for these, so a session that could
+              // connect but never run SQL does not advertise one.
+              writeJson(200, { ok: true, presets: scope.dataAgentPresets.ids })
+              return
+            }
 
             if (req.method === 'POST' && routeIs(segments, 'connect')) {
               try {

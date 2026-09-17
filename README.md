@@ -87,6 +87,18 @@ dsh --profile dsh-tui
 ```
 在会话中输入 `/preset data-agent` 切换模式，输入 `/database connect` 连接数据库，即可开始提问。
 
+### 让其他模式也能用数据库
+
+数据库工具默认只挂在本插件自带的 `data-agent` 预设里。要让别的预设（例如你自己的代码模式）也能连库跑 SQL，在 profile 的 `cordis.patch.yml` 里列出它们：
+
+```yaml
+- id: data-agent
+  config:
+    additionalToolPresets: ['code']
+```
+
+被列出的预设只拿到**工具**——`sql-query`、`sql-write`、`sql-cmd`、`catalog-*`、`render-analysis`——不会拿到 `/database`、`/catalog` 命令，也不会被套上 `data-agent` 预设那套「禁用全部继承工具」的限制，所以它原有的工具一个不少。Web 端的「数据库」按钮也会在这些预设的会话里出现。预设不存在时启动直接报错，不会静默跳过。
+
 ## 使用场景
 
 | 场景分类 | 提示词示例 |

@@ -3,8 +3,12 @@
  * from the alpha.2 New Session hero, where no Session scope exists yet.
  */
 import type { SessionListLike } from './DataAgentWorkbench.tsx';
-/** The plugin preset id used by both the hero stage and Session projection. */
+/** The preset this package installs and owns; always database-capable. */
 export declare const DATA_AGENT_PRESET = "data-agent";
+/** Fetch the database-capable preset ids once per page load. */
+export declare function databasePresets(): Promise<ReadonlySet<string>>;
+/** Drop the cached answer so the next caller re-asks. Tests only. */
+export declare function resetDatabasePresets(): void;
 /** Minimal observable contract consumed by the slot renderer's Hook binder. */
 export interface ObservableSnapshot<T> {
     getSnapshot(): T;

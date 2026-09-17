@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { DataAgentWorkbench, type SessionListLike } from '../src/client/DataAgentWorkbench.tsx'
 import { zh } from '../src/client/locales.ts'
 import { CONNECTION_STORAGE_KEY } from '../src/client/persistence.ts'
-import type { WorkbenchOpenSnapshot } from '../src/client/workbench-open.ts'
+import { resetDatabasePresets, type WorkbenchOpenSnapshot } from '../src/client/workbench-open.ts'
 
 vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({
   IconDataOutline16: () => React.createElement('span', { 'data-testid': 'database-icon' }),
@@ -34,7 +34,23 @@ vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({
   },
 }))
 
+/**
+ * The requests the workbench made for this session.
+ *
+ * Excludes the deployment-wide preset probe, which is one call per page and
+ * unrelated to what any single session does.
+ * @param mock - the stubbed global fetch.
+ * @returns requested URLs, session-scoped only.
+ */
+function sessionCalls(mock: { mock: { calls: unknown[][] } }): string[] {
+  return mock.mock.calls
+    .map(([input]) => String(input))
+    .filter(url => !url.endsWith('/plugins/data-agent/presets'))
+}
+
 beforeEach(() => {
+  // The preset answer is cached for the life of the page; each test is a page.
+  resetDatabasePresets()
   const values = new Map<string, string>()
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => values.get(key) ?? null,
@@ -122,13 +138,17 @@ function placeholderOf(input: HTMLElement): string | null {
 }
 
 describe('DataAgentWorkbench composer entry', () => {
-  it('renders nothing and makes no request outside data-agent sessions', async () => {
-    const fetchMock = vi.fn()
+  it('renders nothing and makes no session request outside database-capable presets', async () => {
+    const fetchMock = vi.fn(async () => response({ ok: true, presets: ['data-agent'] }))
     vi.stubGlobal('fetch', fetchMock)
     const view = renderWorkbench('standard')
     expect(view.container.innerHTML).toBe('')
     await Promise.resolve()
-    expect(fetchMock).not.toHaveBeenCalled()
+    // Asking which presets reach a database is deployment-wide and happens once
+    // per page; nothing session-scoped may be requested for this session.
+    for (const [input] of fetchMock.mock.calls) {
+      expect(String(input)).toBe('/plugins/data-agent/presets')
+    }
   })
 
   it('shows one top-right dialog trigger and keeps advanced tabs disabled before connection', async () => {
@@ -198,7 +218,7 @@ describe('DataAgentWorkbench composer entry', () => {
     expect((within(dialog).getByLabelText('端口') as HTMLInputElement).value).toBe('8443')
     fireEvent.change(within(dialog).getByLabelText('数据库名'), { target: { value: 'analytics' } })
     fireEvent.click(within(dialog).getByRole('button', { name: '连接' }))
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(sessionCalls(fetchMock)).toHaveLength(3))
   })
 
   it('sets the disconnected Lexical placeholder and restores the host copy outside data-agent', async () => {
@@ -261,7 +281,7 @@ describe('DataAgentWorkbench composer entry', () => {
     expect(within(dialog).getByText('需要重新认证')).toBeTruthy()
     expect((within(dialog).getByLabelText('密码') as HTMLInputElement).disabled).toBe(false)
     expect((within(dialog).getByRole('tab', { name: '库表' }) as HTMLButtonElement).disabled).toBe(true)
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(sessionCalls(fetchMock)).toHaveLength(2)
   })
 
   it('automatically restores a matching profile when the user opted to remember its password', async () => {
@@ -275,6 +295,7 @@ describe('DataAgentWorkbench composer entry', () => {
     }
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+      if (url.endsWith('/presets')) return response({ ok: true, presets: ['data-agent'] })
       if (url.includes('/catalog/sources')) return response({ ok: true, sources: [source] })
       if (url.includes('/catalog/status')) return response({
         ok: true, status: { source, counts: { assets: 1, fields: 1, needsReview: 0 } },
@@ -339,14 +360,14 @@ describe('DataAgentWorkbench composer entry', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '数据库工作台：已连接' }))
     const dialog = screen.getByRole('dialog', { name: '数据库工作台' })
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(sessionCalls(fetchMock)).toHaveLength(2)
     fireEvent.click(within(dialog).getByRole('tab', { name: '库表' }))
     await waitFor(() => expect(within(dialog).getAllByText('orders')).toHaveLength(2))
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(sessionCalls(fetchMock)).toHaveLength(3)
 
     fireEvent.click(within(dialog).getByRole('tab', { name: '连接配置' }))
     fireEvent.click(within(dialog).getByRole('tab', { name: '库表' }))
-    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(sessionCalls(fetchMock)).toHaveLength(3)
   })
 
   it('selects and renders Unicode SQLite table metadata without rewriting names', async () => {
@@ -495,6 +516,7 @@ describe('DataAgentWorkbench composer entry', () => {
     const catalogSearchUrls: string[] = []
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
+      if (url.endsWith('/presets')) return response({ ok: true, presets: ['data-agent'] })
       if (url.includes('/catalog/sources')) return response({ ok: true, sources: [source] })
       if (url.includes('/catalog/status')) return response({
         ok: true, status: { source, counts: { assets: 1, fields: 0, needsReview: 0 } },
@@ -594,6 +616,7 @@ describe('DataAgentWorkbench composer entry', () => {
     ]
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+      if (url.endsWith('/presets')) return response({ ok: true, presets: ['data-agent'] })
       if (url.includes('/catalog/sources')) return response({ ok: true, sources: [source] })
       if (url.includes('/catalog/status')) return response({ ok: true, status: { source, counts: { assets: 2, fields: 1, needsReview: semantics.length } } })
       if (url.includes('/catalog/runs')) return response({ ok: true, runs: [] })
@@ -646,6 +669,7 @@ describe('DataAgentWorkbench composer entry', () => {
     }
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
+      if (url.endsWith('/presets')) return response({ ok: true, presets: ['data-agent'] })
       if (url.includes('/catalog/sources')) return response({ ok: true, sources: [source] })
       if (url.includes('/catalog/status')) return response({ ok: true, status: { source, counts: { assets: 0, fields: 0, needsReview: 0 } } })
       if (url.includes('/catalog/runs')) return response({ ok: true, runs: [] })
@@ -691,6 +715,7 @@ describe('DataAgentWorkbench composer entry', () => {
         return { ok: false, status: 409, json: async () => ({ error: 'Catalog semantic version conflict; current version is 2' }) } as Response
       }
       if (url.includes('/catalog/semantics/metric-gmv')) return response({ ok: true, semantic })
+      if (url.endsWith('/presets')) return response({ ok: true, presets: ['data-agent'] })
       if (url.includes('/catalog/sources')) return response({ ok: true, sources: [source] })
       if (url.includes('/catalog/status')) return response({ ok: true, status: { source, counts: { assets: 1, fields: 0, needsReview: 1 } } })
       if (url.includes('/catalog/runs')) return response({ ok: true, runs: [] })
@@ -745,6 +770,7 @@ describe('DataAgentWorkbench composer entry', () => {
     })
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
+      if (url.endsWith('/presets')) return response({ ok: true, presets: ['data-agent'] })
       if (url.includes('/catalog/sources')) return response({ ok: true, sources: [source] })
       if (url.includes('/catalog/status')) return response({ ok: true, status: { source, counts: { assets: 2, fields: 0, needsReview: 0 } } })
       if (url.includes('/catalog/runs')) return response({ ok: true, runs })

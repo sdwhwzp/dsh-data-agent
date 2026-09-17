@@ -87,6 +87,18 @@ dsh --profile dsh-tui
 ```
 Enter `/preset data-agent` to switch to Data Mode, and `/database connect` to connect your database and start asking questions.
 
+### Letting other presets reach the database
+
+The database tools are mounted only into this package's own `data-agent` preset. To let another preset — your coding preset, say — connect and run SQL, list it in the profile's `cordis.patch.yml`:
+
+```yaml
+- id: data-agent
+  config:
+    additionalToolPresets: ['code']
+```
+
+A listed preset receives the **tools alone** — `sql-query`, `sql-write`, `sql-cmd`, `catalog-*`, `render-analysis` — and neither the `/database` and `/catalog` commands nor the owned preset's "deny every inherited tool" restriction, so it keeps everything it already composes. The Web database control appears in those presets' sessions too. A preset that does not exist fails startup rather than being skipped.
+
 ## Use Cases
 
 | Scenario | Prompt Example |

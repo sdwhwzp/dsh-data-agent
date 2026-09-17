@@ -4,8 +4,38 @@
  */
 import type { SessionListLike } from './DataAgentWorkbench.tsx'
 
-/** The plugin preset id used by both the hero stage and Session projection. */
+/** The preset this package installs and owns; always database-capable. */
 export const DATA_AGENT_PRESET = 'data-agent'
+
+/**
+ * Preset ids whose sessions carry the database tools, as the Host reports them.
+ *
+ * The deployment may mount the tool half into further presets
+ * (`additionalToolPresets`), so the browser cannot decide this from a constant.
+ * One in-flight request per page: the answer is deployment-wide and stable for
+ * the life of the Host process, and every session control asks the same
+ * question. Before it resolves — and if it fails — only the owned preset counts,
+ * which is the behavior this package had before the list existed.
+ */
+let presetRequest: Promise<ReadonlySet<string>> | undefined
+
+/** Fetch the database-capable preset ids once per page load. */
+export function databasePresets(): Promise<ReadonlySet<string>> {
+  presetRequest ??= fetch('/plugins/data-agent/presets')
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`presets: HTTP ${response.status}`)
+      const body = await response.json() as { ok?: boolean; presets?: unknown }
+      if (body.ok !== true || !Array.isArray(body.presets)) throw new Error('presets: malformed response')
+      return new Set<string>([DATA_AGENT_PRESET, ...body.presets.filter((id): id is string => typeof id === 'string')])
+    })
+    .catch(() => new Set<string>([DATA_AGENT_PRESET]))
+  return presetRequest
+}
+
+/** Drop the cached answer so the next caller re-asks. Tests only. */
+export function resetDatabasePresets(): void {
+  presetRequest = undefined
+}
 
 /** Minimal observable contract consumed by the slot renderer's Hook binder. */
 export interface ObservableSnapshot<T> {

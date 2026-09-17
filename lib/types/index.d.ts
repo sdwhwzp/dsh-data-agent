@@ -18,9 +18,22 @@
  */
 import type { Context } from '@deepseek-ai/cordis';
 import type { ScopeKey } from '@deepseek-ai/dsh-scope';
+/**
+ * Preset ids whose sessions carry the database tools.
+ *
+ * One home for the fact: the host row decides it from config, and the sibling
+ * routes row serves it to the browser so the Web workbench control appears in
+ * exactly the sessions that can actually run SQL.
+ */
+export interface DataAgentPresets {
+    /** Preset ids with the tool half mounted, owned preset first. */
+    readonly ids: readonly string[];
+}
 /** The `dataAgentConnections` service face on the cordis context. */
 declare module '@deepseek-ai/cordis' {
     interface Context {
+        /** Preset ids whose sessions carry the database tools. */
+        dataAgentPresets: DataAgentPresets;
         dataAgentConnections: DataAgentConnections;
         dataAgentCatalog: DataAgentCatalog;
         dataAgentCatalogScanner: DataAgentCatalogScanner;
@@ -64,6 +77,16 @@ export interface SeededConnectionConfig {
 export interface Config {
     /** Preset directory name installed under `$DSH_HOME/.agent-presets/`. */
     presetId: string;
+    /**
+     * Further preset ids whose sessions also receive the database tools.
+     *
+     * Each named preset must already exist; this package installs and owns only
+     * {@link Config.presetId}. These presets receive the tool half ALONE — not
+     * the `/database` and `/catalog` commands, and not the inherited-tool
+     * restriction that makes the owned preset a closed data surface — so a
+     * general-purpose preset keeps its own tools and gains SQL beside them.
+     */
+    additionalToolPresets: string[];
     /** Whether to self-install the preset on startup (idempotent). */
     installPreset: boolean;
     /** Deadline for one /connect connectivity check, milliseconds. */
@@ -104,6 +127,7 @@ export interface Config {
 /** Loader schema with deployment defaults (no library defaults). */
 export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
     presetId: import("@deepseek-ai/schemastery").default<string, string>;
+    additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[]>;
     installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
     connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
     introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
@@ -153,6 +177,7 @@ export declare const Config: import("@deepseek-ai/schemastery").default<Schemast
     }>, string>>;
 }>, Schemastery.ObjectT<{
     presetId: import("@deepseek-ai/schemastery").default<string, string>;
+    additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[]>;
     installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
     connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
     introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
@@ -230,6 +255,19 @@ type PresetCapabilitiesConfig = Pick<ToolConfig, 'queryTimeoutMs' | 'maxResultCh
  * no package import and only links the agent scope to this key.
  */
 export declare function mountPresetCapabilities(ctx: Context, key: ScopeKey, scopeTag: symbol, config: PresetCapabilitiesConfig, commandOptions?: DataAgentCommandAdapterOptions): Promise<void>;
+/**
+ * Mount the tool half alone into one preset this package does not own.
+ *
+ * Deliberately narrower than {@link mountPresetCapabilities}: no `/database`
+ * or `/catalog` command, and no inherited-tool restriction. A general-purpose
+ * preset must keep every tool it already composes and merely gain SQL beside
+ * them, whereas the owned data preset is a closed surface by design.
+ * @param ctx - host Context that already provides the data-agent services.
+ * @param presetId - an existing preset that should also reach the database.
+ * @param config - the resolved tool-half settings.
+ * @throws when the preset does not exist, rather than silently skipping it.
+ */
+export declare function mountPresetTools(ctx: Context, presetId: string, config: PresetCapabilitiesConfig): Promise<void>;
 /**
  * Mount the data-agent profile row: connection store, config-seeded
  * connections, preset installation, and profile-preloaded preset capabilities.

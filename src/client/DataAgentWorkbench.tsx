@@ -32,7 +32,7 @@ import {
 } from './persistence.ts'
 import { QueryResultTable, type StructuredWorkbenchResult } from './QueryResultTable.tsx'
 import { CatalogPanel } from './CatalogPanel.tsx'
-import { DATA_AGENT_PRESET, type ObservableSnapshot, type WorkbenchOpenSnapshot } from './workbench-open.ts'
+import { DATA_AGENT_PRESET, databasePresets, type ObservableSnapshot, type WorkbenchOpenSnapshot } from './workbench-open.ts'
 import { overrideComposerPlaceholder } from './workbench-placeholder.ts'
 import css from './DataAgentWorkbench.module.css'
 
@@ -275,7 +275,16 @@ export function DataAgentWorkbench({
   t,
 }: DataAgentWorkbenchProps) {
   const list = useSessions((snapshot: SessionListLike) => snapshot)
-  const isDataAgent = list.byId[sessionId as never]?.projectionValues?.agentPreset === DATA_AGENT_PRESET
+  // Which presets reach the database is a deployment choice, so it arrives from
+  // the Host. Until it does, only the owned preset counts.
+  const [presets, setPresets] = useState<ReadonlySet<string>>(() => new Set([DATA_AGENT_PRESET]))
+  useEffect(() => {
+    let live = true
+    void databasePresets().then((ids) => { if (live) setPresets(ids) })
+    return () => { live = false }
+  }, [])
+  const preset = list.byId[sessionId as never]?.projectionValues?.agentPreset
+  const isDataAgent = typeof preset === 'string' && presets.has(preset)
   const openRequest = useWorkbenchOpen((snapshot: WorkbenchOpenSnapshot) => snapshot)
   const requestedFromHero = openRequest.sessionId === sessionId && openRequest.revision > 0
   const tabsId = useId()
@@ -628,7 +637,7 @@ export function DataAgentWorkbench({
     return overrideComposerPlaceholder(card, composerPlaceholder)
   })
 
-  // A session not running the data-agent preset: nothing renders at all.
+  // A session whose preset carries no database tool: nothing renders at all.
   if (!isDataAgent) return null
 
   const databaseLabel = sqlite
