@@ -8,7 +8,7 @@ import type { AgentPresetSeatState } from '@deepseek-ai/dsh-client-ui-agent-pres
 import type { WorkbenchOpenSnapshot } from '../src/client/workbench-open.ts'
 
 vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({
-  IconDataOutline16: () => React.createElement('span', { 'data-testid': 'database-icon' }),
+  IconDataOutlineRegular: () => React.createElement('span', { 'data-testid': 'database-icon' }),
   Tooltip: ({ children }: { children: React.ReactNode }) => children,
 }))
 

@@ -101,7 +101,7 @@ export function createWorkbenchOpenBridge(
     const current = store.getSnapshot()
     if (!current.pending) return
     const list = sessions.getSnapshot()
-    const sessionId = list.current
+    const sessionId = mainSessionId(list)
     if (sessionId === undefined) return
     if (list.byId[sessionId]?.projectionValues?.agentPreset !== DATA_AGENT_PRESET) return
     store.set({ pending: false, revision: current.revision + 1, sessionId })
@@ -131,4 +131,9 @@ export function createWorkbenchOpenBridge(
       unsubscribe()
     },
   }
+}
+
+/** Return the main-view Session across the legacy and retained-list formats. */
+export function mainSessionId(list: Pick<SessionListLike, 'current'> & Partial<Pick<SessionListLike, 'byId'>>): string | undefined {
+  return list.current ?? Object.entries(list.byId ?? {}).find(([, item]) => (item.retainedBy?.mainView ?? 0) > 0)?.[0]
 }

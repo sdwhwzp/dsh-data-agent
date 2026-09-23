@@ -184,3 +184,5 @@ DSH Data Agent 广泛支持各类主流业务数据库、分析型数仓及本�
 - [dsh-web-ui](https://github.com/dsh-external/dsh-web-ui)：DeepSeek Harness 可扩展 Web UI
 - [dsh-cc-tui](https://github.com/dsh-external/dsh-cc-tui)：DeepSeek Harness 终端全屏交互界面
 - [platonai/Browser4](https://github.com/platonai/Browser4)：面向智能体的大规模 Web 自动化浏览器引擎
+
+Web 数据工作台兼容 Harness 0.1.7 的图标名称和主视图会话保留状态，并保留较早客户端接口的兼容。

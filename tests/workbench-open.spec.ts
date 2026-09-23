@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SessionListLike } from '../src/client/DataAgentWorkbench.tsx'
-import { createWorkbenchOpenBridge } from '../src/client/workbench-open.ts'
+import { mainSessionId, createWorkbenchOpenBridge } from '../src/client/workbench-open.ts'
 
 function sessionsSource(initial: SessionListLike) {
   let snapshot = initial
@@ -74,4 +74,14 @@ describe('New Session workbench bridge', () => {
     expect(retry.store.getSnapshot()).toEqual({ pending: false, revision: 0 })
     retry.dispose()
   })
+})
+
+it('selects only the retained main view on Harness 0.1.7', () => {
+  const list = { byId: { background: { retainedBy: { mainView: 0 } }, main: { retainedBy: { mainView: 1 }, projectionValues: { agentPreset: 'data-agent' } } } }
+  expect(mainSessionId(list)).toBe('main')
+  const sessions = sessionsSource(list)
+  const bridge = createWorkbenchOpenBridge(sessions.source, () => {})
+  bridge.requestFromHero()
+  expect(bridge.store.getSnapshot().sessionId).toBe('main')
+  bridge.dispose()
 })

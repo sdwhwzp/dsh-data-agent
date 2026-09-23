@@ -184,3 +184,5 @@ This project is licensed under the [MIT License](LICENSE).
 - [dsh-web-ui](https://github.com/dsh-external/dsh-web-ui): Extensible Web UI for DeepSeek Harness
 - [dsh-cc-tui](https://github.com/dsh-external/dsh-cc-tui): Keyboard-first terminal interface for DeepSeek Harness
 - [platonai/Browser4](https://github.com/platonai/Browser4): AI-native browser engine for autonomous agents and large-scale web automation
+
+The Web workbench supports the Harness 0.1.7 icon names and retained main-view Session list, while retaining the earlier client vocabulary.
