@@ -89,6 +89,8 @@ export interface Config {
     additionalToolPresets: string[];
     /** Whether to self-install the preset on startup (idempotent). */
     installPreset: boolean;
+    /** The profile declares preset /tool and /command rows instead of legacy standing mounts. */
+    profileManagedPresets: boolean;
     /** Deadline for one /connect connectivity check, milliseconds. */
     connectTimeoutMs: number;
     /** Cap on the table list returned by /connect and /status. */
@@ -129,6 +131,7 @@ export declare const Config: import("@deepseek-ai/schemastery").default<Schemast
     presetId: import("@deepseek-ai/schemastery").default<string, string>;
     additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[]>;
     installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    profileManagedPresets: import("@deepseek-ai/schemastery").default<boolean, boolean>;
     connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
     introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
     queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
@@ -179,6 +182,7 @@ export declare const Config: import("@deepseek-ai/schemastery").default<Schemast
     presetId: import("@deepseek-ai/schemastery").default<string, string>;
     additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[]>;
     installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    profileManagedPresets: import("@deepseek-ai/schemastery").default<boolean, boolean>;
     connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
     introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
     queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;

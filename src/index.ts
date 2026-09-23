@@ -184,6 +184,8 @@ export interface Config {
   additionalToolPresets: string[]
   /** Whether to self-install the preset on startup (idempotent). */
   installPreset: boolean
+  /** The profile declares preset /tool and /command rows instead of legacy standing mounts. */
+  profileManagedPresets: boolean
   /** Deadline for one /connect connectivity check, milliseconds. */
   connectTimeoutMs: number
   /** Cap on the table list returned by /connect and /status. */
@@ -225,6 +227,7 @@ export const Config = z.object({
   presetId: z.string().default(DEFAULT_PRESET_ID),
   additionalToolPresets: z.array(z.string()).default([]),
   installPreset: z.boolean().default(true),
+  profileManagedPresets: z.boolean().default(false),
   connectTimeoutMs: z.number().step(1).min(1000).default(DEFAULT_CONNECT_TIMEOUT_MS),
   introspectMaxTables: z.number().step(1).min(1).default(DEFAULT_INTROSPECT_MAX_TABLES),
   queryTimeoutMs: z.number().step(1).min(1000).default(DEFAULT_QUERY_TIMEOUT_MS),
@@ -502,6 +505,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     presetId: config.presetId,
     additionalToolPresets: config.additionalToolPresets,
     installPreset: config.installPreset,
+    profileManagedPresets: config.profileManagedPresets,
     connectTimeoutMs: config.connectTimeoutMs,
     introspectMaxTables: config.introspectMaxTables,
     queryTimeoutMs: config.queryTimeoutMs,
@@ -522,6 +526,12 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     connections: config.connections,
   }
 
+  if (resolved.profileManagedPresets && resolved.installPreset) {
+    throw new Error('data-agent: profileManagedPresets requires installPreset=false')
+  }
+  if (resolved.additionalToolPresets.includes(resolved.presetId)) {
+    throw new Error(`data-agent: additionalToolPresets repeats the owned preset "${resolved.presetId}"`)
+  }
   const presetReady = resolved.installPreset
     ? await installPreset(ctx, resolved.presetId)
     : false
@@ -576,6 +586,11 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   } else {
     const shared = await accounts.forPrincipal(undefined, 'startup')
     provideScope(ctx, shared)
+  }
+
+  if (resolved.profileManagedPresets) {
+    ctx.provide('dataAgentPresets', { ids: [resolved.presetId, ...resolved.additionalToolPresets] })
+    return
   }
 
   const toolConfig: PresetCapabilitiesConfig = {

@@ -302,3 +302,18 @@ describe('database tools in a preset this package does not own', () => {
     })).rejects.toThrow(/has no standing scope/)
   })
 })
+
+it('uses declarative profile preset capabilities without a legacy standing registry', async () => {
+  const services = new Map<string, unknown>()
+  const ctx = {
+    logger: { info() {}, warn() {} },
+    provide(name: string, value: unknown) { services.set(name, value) },
+    effect() {},
+    get() { return undefined },
+  } as never
+  await apply(ctx, Config({ installPreset: false, profileManagedPresets: true, additionalToolPresets: ['code'], persistConnections: false }))
+  expect(services.get('dataAgentPresets')).toEqual({ ids: ['data-agent', 'code'] })
+  expect(services.has('dataAgentConnections')).toBe(true)
+  await expect(apply(ctx, Config({ profileManagedPresets: true }))).rejects.toThrow('requires installPreset=false')
+  await expect(apply(ctx, Config({ installPreset: false, profileManagedPresets: true, additionalToolPresets: ['data-agent'] }))).rejects.toThrow('repeats the owned preset')
+})

@@ -186,3 +186,5 @@ DSH Data Agent 广泛支持各类主流业务数据库、分析型数仓及本�
 - [platonai/Browser4](https://github.com/platonai/Browser4)：面向智能体的大规模 Web 自动化浏览器引擎
 
 Web 数据工作台兼容 Harness 0.1.7 的图标名称和主视图会话保留状态，并保留较早客户端接口的兼容。
+
+Harness 0.1.7 部署使用 `profileManagedPresets: true`、`installPreset: false`。Profile 须声明数据模式的 `/tool` 和 `/command` 子插件，并仅向 `additionalToolPresets` 中的其他预设添加 `/tool`，以保留其原有工具。

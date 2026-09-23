@@ -186,3 +186,5 @@ This project is licensed under the [MIT License](LICENSE).
 - [platonai/Browser4](https://github.com/platonai/Browser4): AI-native browser engine for autonomous agents and large-scale web automation
 
 The Web workbench supports the Harness 0.1.7 icon names and retained main-view Session list, while retaining the earlier client vocabulary.
+
+Harness 0.1.7 deployments use `profileManagedPresets: true` with `installPreset: false`. The profile must declare `/tool` and `/command` child plugins for the data preset and add only `/tool` to presets named in `additionalToolPresets`, preserving their existing tools.
