@@ -5,6 +5,9 @@ export type { DatabaseType } from '../database-types.ts';
 export interface SessionListLike {
     current?: string;
     byId: Record<string, {
+        retainedBy?: {
+            mainView?: number;
+        };
         projectionValues?: {
             agentPreset?: string | null;
         };
