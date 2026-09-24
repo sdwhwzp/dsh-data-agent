@@ -9,6 +9,12 @@ import {
 import type { SessionId } from '@deepseek-ai/dsh-session'
 import { z } from 'zod'
 
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'plugin:@yejiming/dsh-data-agent': { kind: 'plugin:@yejiming/dsh-data-agent' }
+  }
+}
+
 const MAX_MODEL_OUTPUT_CHARS = 65_536
 const MAX_MODEL_OUTPUT_TOKENS = 16_384
 
@@ -145,7 +151,7 @@ async function generateModelBatch(
   const prepared = await llm.prepareCall(config, signal)
   const message = createUserMessage({
     content: [{ type: 'text', text: JSON.stringify(input) }],
-    source: { kind: 'plugin', plugin: '@yejiming/dsh-data-agent' },
+    source: { kind: 'plugin:@yejiming/dsh-data-agent' },
   })
   let output = ''
   let finished = false

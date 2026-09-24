@@ -1,5 +1,7 @@
 # DSH Data Agent · 用对话分析数据与商业洞察
 
+Catalog model inputs use the producer source `plugin:@yejiming/dsh-data-agent`, matching migrated history and Session V4.
+
 **中文** | [English](README.en.md)
 
 <p align="center">
