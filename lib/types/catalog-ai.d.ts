@@ -1,6 +1,6 @@
 /** DSH-native AI enrichment for table and field business-meaning candidates. */
 import type { AgentRegistry } from '@deepseek-ai/dsh-agent';
-import { type LlmCallConfig, type LlmRuntime } from '@deepseek-ai/dsh-llm';
+import type { LlmCallConfig, LlmRuntime } from '@deepseek-ai/dsh-llm';
 declare module '@deepseek-ai/dsh-llm' {
     interface MessageSourceMap {
         'plugin:@yejiming/dsh-data-agent': {

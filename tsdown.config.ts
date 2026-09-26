@@ -94,6 +94,9 @@ const client: UserConfig = {
     generateBundle(_options, bundle) {
       for (const output of Object.values(bundle)) {
         if (output.type !== 'chunk') continue
+        // Keep retained dependency license text and line positions without
+        // the trailing spaces introduced by CJS factory indentation.
+        output.code = output.code.replace(/\/\*![\s\S]*?\*\//g, comment => comment.replace(/[\t ]+$/gm, ''))
         for (const match of output.code.matchAll(/\brequire\((['"])([^'"]+)\1\)/g)) {
           const dependency = match[2]!
           if (PLATFORM_MODULES.includes(dependency as (typeof PLATFORM_MODULES)[number])) continue

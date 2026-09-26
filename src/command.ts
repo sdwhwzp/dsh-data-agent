@@ -27,7 +27,7 @@ import { registerCatalogCommand } from './catalog-command.ts'
 import { createCatalogTuiAdapter } from './catalog-tui.ts'
 
 export const name = 'data-agent-database-command'
-export const inject = ['commands', 'dataAgentConnections', 'dataAgentCatalog', 'dataAgentCatalogScanner', 'tools']
+export const inject = ['commands', 'dataAgentAccounts', 'dataAgentConnections', 'dataAgentCatalog', 'dataAgentCatalogScanner', 'tools']
 
 export const DATABASE_COMMAND_USAGE = [
   '用法：',

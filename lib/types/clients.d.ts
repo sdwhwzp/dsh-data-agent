@@ -55,24 +55,24 @@ export interface ClientConfig {
 /** Database types backed by a locally resolved CLI executable. */
 export type CliDatabaseType = Exclude<DatabaseType, 'clickhouse'>;
 /** Loader schema for one client override (all fields optional at input). */
-export declare const clientConfigSchema: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
-    command: import("@deepseek-ai/schemastery").default<string, string>;
-    args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-}>, Schemastery.ObjectT<{
-    command: import("@deepseek-ai/schemastery").default<string, string>;
-    args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-}>>;
+export declare const clientConfigSchema: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<NoInfer<{
+    command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+    args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+}>>, Schemastery.ObjectT<NoInfer<{
+    command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+    args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+}>>, "plain">;
 export declare const clientsSchema: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
     command?: string | null | undefined;
     args?: string[] | null | undefined;
     searchPaths?: string[] | null | undefined;
-} & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-    command: import("@deepseek-ai/schemastery").default<string, string>;
-    args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-}>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
+} & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+    command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+    args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+}>>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
 /**
  * A fully constructed client invocation: argv (command + flags, no SQL),
  * the credential env entries, and the stdin prefix (Oracle/Hive connect

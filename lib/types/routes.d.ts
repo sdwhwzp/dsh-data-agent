@@ -21,21 +21,21 @@ export interface Config {
     maxQueryChars: number;
     readonly: boolean;
 }
-export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
-    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
-    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
-    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-}>, Schemastery.ObjectT<{
-    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
-    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
-    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-}>>;
+export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<NoInfer<{
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+}>>, Schemastery.ObjectT<NoInfer<{
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+}>>, "plain">;
 export interface ConnectRequestBody extends DatabaseConnectionInput {
     sessionId: string;
 }

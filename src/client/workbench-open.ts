@@ -134,6 +134,6 @@ export function createWorkbenchOpenBridge(
 }
 
 /** Return the main-view Session across the legacy and retained-list formats. */
-export function mainSessionId(list: Pick<SessionListLike, 'current'> & Partial<Pick<SessionListLike, 'byId'>>): string | undefined {
+export function mainSessionId(list: { current?: string } & Partial<Pick<SessionListLike, 'byId'>>): string | undefined {
   return list.current ?? Object.entries(list.byId ?? {}).find(([, item]) => (item.retainedBy?.mainView ?? 0) > 0)?.[0]
 }

@@ -24,10 +24,9 @@ import type { Context } from '@deepseek-ai/cordis';
 /**
  * The part of the Host's authenticated principal this package needs.
  *
- * Declared structurally instead of imported: `AuthenticatedPrincipal` is absent
- * from the peer range this package builds against (`@deepseek-ai/dsh-llm`
- * 0.1.2-alpha.2) and present on newer Hosts, and TypeScript's structural typing
- * accepts the Host's value either way.
+ * Declared structurally because the public SDK does not expose this personal
+ * deployment's authentication extension. The Host's verified principal is
+ * assignable to these fields.
  */
 export interface DataAgentPrincipal {
     readonly source: string;

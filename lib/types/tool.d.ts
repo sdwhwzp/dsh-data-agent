@@ -2,7 +2,7 @@
  * The data-agent tool half (`@yejiming/dsh-data-agent/tool`): mounted ONLY by
  * the data-agent agent preset (`preset/data-agent/agent.cordis.yml`), never
  * by the host composition. It consumes the host's `subprocess` service and
- * the host-provided `dataAgentConnections` connection store, so it needs no
+ * the host-provided account, connection, and Catalog services, so it needs no
  * realm and satisfies the preset guard (a preset row that only consumes).
  *
  * Tool surface:
@@ -39,37 +39,37 @@ export interface Config {
     clients: Partial<Record<string, ClientConfig>>;
 }
 /** Loader schema with deployment defaults (no library defaults). */
-export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
-    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
-    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
-    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<NoInfer<{
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
     clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-        command: import("@deepseek-ai/schemastery").default<string, string>;
-        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
-}>, Schemastery.ObjectT<{
-    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
-    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
-    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+        command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    }>>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+}>>, Schemastery.ObjectT<NoInfer<{
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
     clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-        command: import("@deepseek-ai/schemastery").default<string, string>;
-        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
-}>>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+        command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    }>>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+}>>, "plain">;
 /**
  * Mount the data-agent database tools: `sql-query` (structured read-only),
  * `sql-write` (explicit write semantics), and `sql-cmd` (raw compatibility).

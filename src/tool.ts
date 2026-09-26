@@ -2,7 +2,7 @@
  * The data-agent tool half (`@yejiming/dsh-data-agent/tool`): mounted ONLY by
  * the data-agent agent preset (`preset/data-agent/agent.cordis.yml`), never
  * by the host composition. It consumes the host's `subprocess` service and
- * the host-provided `dataAgentConnections` connection store, so it needs no
+ * the host-provided account, connection, and Catalog services, so it needs no
  * realm and satisfies the preset guard (a preset row that only consumes).
  *
  * Tool surface:
@@ -64,7 +64,7 @@ import { applyCatalogTools } from './catalog-tools.ts'
 export const name = 'data-agent-tool'
 
 /** Services required before the tool can register. */
-export const inject = ['tools', 'subprocess', 'dataAgentConnections', 'dataAgentCatalog']
+export const inject = ['tools', 'subprocess', 'dataAgentAccounts', 'dataAgentConnections', 'dataAgentCatalog']
 
 /** Tool-half configuration (loader schema with the same defaults as the host). */
 export interface Config {

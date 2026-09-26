@@ -54,7 +54,7 @@ Catalog model inputs use the producer source `plugin:@yejiming/dsh-data-agent`, 
 
 ### 1. 运行环境准备
 
-- **DeepSeek Harness**（DSH 运行时环境）
+- **DeepSeek Harness `0.1.7-rc.2`**（本源码版本 `0.2.0` 的适配目标；官方 `@deepseek-ai/dsh-*` 依赖统一为此版本）
 - 本机可访问目标数据库（支持本地 SQLite 文件或局域网/云端数据库）
 
 ### 2. 快速安装
@@ -71,7 +71,9 @@ dsh plugin --profile dsh-tui add @yejiming/dsh-data-agent
 
 ### 3. 开始分析
 
-升级插件后首次启动会自动更新已识别的原版 `data-agent` 预设，使其兼容新版 DSH 必填的 `persona.config.prefix`，同时保留旧版 DSH 使用的 `text`。自定义过的预设不会被覆盖；若启动报 `$.prefix missing required value`，请备份 `$DSH_HOME/.agent-presets/data-agent/agent.cordis.yml`（默认位于 `~/.dsh`），在 persona 的 config 中让 `prefix` 与原 `text` 使用相同提示词，再重启。
+当前版本通过新版 `dsh-agent-preset-registry` 注册数据模式，不再调用已移除的 `standingKeyFor()`。预设仍从 `$DSH_HOME/.agent-presets/<presetId>/` 读取；宿主注册表负责工具作用域、空会话切换和卸载。现有自定义预设与名称保持不变。`installPreset: false` 会禁用插件的预设安装及注册；需要由其他宿主插件声明预设。旧版 DSH 请继续使用相应旧版插件。
+
+升级插件后首次启动会自动更新已识别的原版 `data-agent` 预设，使其兼容新版 DSH 必填的 `persona.config.prefix`，保留已有 `text` 字段。自定义过的预设不会被覆盖；若启动报 `$.prefix missing required value`，请备份 `$DSH_HOME/.agent-presets/data-agent/agent.cordis.yml`（默认位于 `~/.dsh`），在 persona 的 config 中让 `prefix` 与原 `text` 使用相同提示词，再重启。
 
 #### 方式一：Web 界面（推荐）
 启动 Web 控制台后，新建会话并选择 **「数据模式」**：
@@ -96,10 +98,14 @@ dsh --profile dsh-tui
 ```yaml
 - id: data-agent
   config:
+    installPreset: false
+    profileManagedPresets: true
     additionalToolPresets: ['code']
 ```
 
-被列出的预设只拿到**工具**——`sql-query`、`sql-write`、`sql-cmd`、`catalog-*`、`render-analysis`——不会拿到 `/database`、`/catalog` 命令，也不会被套上 `data-agent` 预设那套「禁用全部继承工具」的限制，所以它原有的工具一个不少。Web 端的「数据库」按钮也会在这些预设的会话里出现。预设不存在时启动直接报错，不会静默跳过。
+同时在宿主声明的数据模式中配置 `@yejiming/dsh-data-agent/tool` 和 `/command` 子插件，并在 `code` 等其他预设中仅配置 `/tool` 子插件。附加预设必须由 profile 声明；未启用 `profileManagedPresets` 时设置 `additionalToolPresets` 会在加载时报告错误。
+
+被列出的预设只拿到**工具**——`sql-query`、`sql-write`、`sql-cmd`、`catalog-*`、`render-analysis`——不会拿到 `/database`、`/catalog` 命令，也不会被套上 `data-agent` 预设那套「禁用全部继承工具」的限制，所以它原有的工具一个不少。Web 端的「数据库」按钮也会在这些预设的会话里出现。预设的注册和激活错误由宿主注册表报告。
 
 ## 使用场景
 
@@ -145,7 +151,7 @@ DSH Data Agent 广泛支持各类主流业务数据库、分析型数仓及本�
 ## 安全与隐私
 
 - 🛡️ **默认只读**：新建连接默认开启“只读模式”，只有明确关掉它才放行写入；`sql-write` 与 `sql-cmd` 的每一次写入都会记入运行日志。
-- 👥 **账号之间互不可见**：当部署接入了登录认证（多账号 Web 网关），每个账号拥有独立的连接档案与数据目录存储，别人的会话 ID、profile ID、Catalog source ID 在你这里查不到任何东西；未接入认证的个人版与终端版行为完全不变。
+- 👥 **账号之间互不可见**：当部署接入了登录认证（多账号 Web 网关），每个账号拥有独立的连接档案与数据目录存储，别人的会话 ID、profile ID、Catalog source ID 在你这里查不到任何东西；未接入认证的个人版与终端版行为完全不变。工具和命令入口显式依赖账号作用域服务，确保 RC.2 宿主中的 SQL 和 Catalog 请求按当前账号解析。
 - 🔑 **凭据安全隔离**：连接密码仅在当前会话运行时使用，不记录在明文历史中，绝不上报远程服务器。
 - 💻 **纯本地执行**：数据查询与分析报告生成均在本地安全受控运行，全面守护企业商业机密。
 

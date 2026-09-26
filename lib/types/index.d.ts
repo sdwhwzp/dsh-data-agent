@@ -3,7 +3,7 @@
  * `dataAgentConnections` service (shared non-secret profile/binding storage;
  * temporary passwords stay process-local), seeds config connections (`connections`, `'*'` =
  * wildcard default), provides a separate versioned governance Catalog, installs the `data-agent` agent preset into
- * `$DSH_HOME/.agent-presets/`, and preloads the preset-scoped database tools
+ * `$DSH_HOME/.agent-presets/`, and declares its preset-scoped database tools
  * on every surface, while registering `/database` and `/catalog` only while
  * the current Cordis composition actually loads the dsh-tui plugin.
  *
@@ -11,13 +11,12 @@
  * (`@yejiming/dsh-data-agent/routes`, cordis row `data-agent-routes`) so
  * this row keeps working in headless profiles without a webserver. The
  * database implementations still have public `./tool` and `./command`
- * exports, but the shipped preset does not dynamically import those package
- * subpaths. Loading them here keeps Desktop on the same profile-startup path
- * as other UI bundles and avoids Electron ASAR package-resolution drift.
+ * exports. The preset registry loads them from absolute URLs beside this
+ * artifact, so scoped activation never relies on resolving this package
+ * again from a different host module root.
  * @module @yejiming/dsh-data-agent
  */
 import type { Context } from '@deepseek-ai/cordis';
-import type { ScopeKey } from '@deepseek-ai/dsh-scope';
 /**
  * Preset ids whose sessions carry the database tools.
  *
@@ -43,8 +42,7 @@ declare module '@deepseek-ai/cordis' {
 import { type DataAgentConnections, type DatabaseType } from './connections.ts';
 import { type CliDatabaseType, type ClientConfig } from './clients.ts';
 import { type DataAgentCatalog, type DataAgentCatalogReview, type DataAgentCatalogScanner } from './catalog.ts';
-import { type DataAgentCommandAdapterOptions } from './command.ts';
-import { type Config as ToolConfig } from './tool.ts';
+import type { Config as ToolConfig } from './tool.ts';
 export type { CatalogServiceBundle, CatalogServiceOptions, CatalogStatusSummary, DataAgentCatalog, DataAgentCatalogReview, DataAgentCatalogScanner, StartCatalogScanInput, } from './catalog.ts';
 export type { CatalogAssetDetail, CatalogAssetHead, CatalogAssetKind, CatalogAssetRevision, CatalogAssetStatus, CatalogCapability, CatalogDiffItem, CatalogDiffKind, CatalogDiffPage, CatalogEnrichment, CatalogEnrichmentStatus, CatalogIdentity, CatalogObservation, CatalogProgress, CatalogRelation, CatalogRun, CatalogRunStatus, CatalogScope, CatalogSearchFilters, CatalogSearchItem, CatalogSearchPage, CatalogSearchRequest, CatalogSemanticEntry, CatalogSemanticKind, CatalogSemanticRevision, CatalogSemanticStatus, CatalogSource, CatalogTechnicalPayload, MetricDefinition, MeaningDefinition, SemanticDefinition, TermDefinition, } from './catalog-types.ts';
 /** Cordis plugin name (diagnostics only). */
@@ -80,7 +78,8 @@ export interface Config {
     /**
      * Further preset ids whose sessions also receive the database tools.
      *
-     * Each named preset must already exist; this package installs and owns only
+     * The profile must declare a /tool row in each named preset and enable
+     * profileManagedPresets; this package installs and owns only
      * {@link Config.presetId}. These presets receive the tool half ALONE — not
      * the `/database` and `/catalog` commands, and not the inherited-tool
      * restriction that makes the owned preset a closed data surface — so a
@@ -127,36 +126,36 @@ export interface Config {
     connections: Record<string, SeededConnectionConfig>;
 }
 /** Loader schema with deployment defaults (no library defaults). */
-export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<{
-    presetId: import("@deepseek-ai/schemastery").default<string, string>;
-    additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-    profileManagedPresets: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
-    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogQueryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogSchemaConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogAssetConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxAssetsPerRun: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxTextChars: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogPageSize: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxPageSize: import("@deepseek-ai/schemastery").default<number, number>;
-    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
-    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
-    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-    persistConnections: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+export declare const Config: import("@deepseek-ai/schemastery").default<Schemastery.ObjectS<NoInfer<{
+    presetId: import("@deepseek-ai/schemastery").default<string, string, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[], Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    profileManagedPresets: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogQueryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogSchemaConcurrency: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogAssetConcurrency: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxAssetsPerRun: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxTextChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogPageSize: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxPageSize: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    persistConnections: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
     clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-        command: import("@deepseek-ai/schemastery").default<string, string>;
-        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+        command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    }>>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
     connections: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         type?: "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver" | null | undefined;
         host?: string | null | undefined;
@@ -167,47 +166,47 @@ export declare const Config: import("@deepseek-ai/schemastery").default<Schemast
         secure?: boolean | null | undefined;
         passwordRef?: string | null | undefined;
         password?: null | undefined;
-    } & import("cosmokit").Dict, string>, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-        type: import("@deepseek-ai/schemastery").default<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver">;
-        host: import("@deepseek-ai/schemastery").default<string, string>;
-        port: import("@deepseek-ai/schemastery").default<number, number>;
-        user: import("@deepseek-ai/schemastery").default<string, string>;
-        database: import("@deepseek-ai/schemastery").default<string, string>;
-        readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-        secure: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-        passwordRef: import("@deepseek-ai/schemastery").default<string, string>;
-        password: import("@deepseek-ai/schemastery").default<never, never>;
-    }>, string>>;
-}>, Schemastery.ObjectT<{
-    presetId: import("@deepseek-ai/schemastery").default<string, string>;
-    additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-    profileManagedPresets: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number>;
-    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogQueryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogSchemaConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogAssetConcurrency: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxAssetsPerRun: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxTextChars: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogPageSize: import("@deepseek-ai/schemastery").default<number, number>;
-    catalogMaxPageSize: import("@deepseek-ai/schemastery").default<number, number>;
-    maxResultChars: import("@deepseek-ai/schemastery").default<number, number>;
-    maxRows: import("@deepseek-ai/schemastery").default<number, number>;
-    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number>;
-    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-    persistConnections: import("@deepseek-ai/schemastery").default<boolean, boolean>;
+    } & import("cosmokit").Dict, string>, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+        type: import("@deepseek-ai/schemastery").default<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "plain">;
+        host: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        port: import("@deepseek-ai/schemastery").default<number, number, "plain">;
+        user: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        database: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, "plain">;
+        secure: import("@deepseek-ai/schemastery").default<boolean, boolean, "plain">;
+        passwordRef: import("@deepseek-ai/schemastery").default<string, string, Mode>;
+        password: import("@deepseek-ai/schemastery").default<never, never, Mode>;
+    }>>, string>, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+}>>, Schemastery.ObjectT<NoInfer<{
+    presetId: import("@deepseek-ai/schemastery").default<string, string, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    additionalToolPresets: import("@deepseek-ai/schemastery").default<string[], string[], Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    installPreset: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    profileManagedPresets: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    connectTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    introspectMaxTables: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    queryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogQueryTimeoutMs: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogSchemaConcurrency: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogAssetConcurrency: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxAssetsPerRun: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxTextChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogPageSize: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    catalogMaxPageSize: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxResultChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxRows: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    maxQueryChars: import("@deepseek-ai/schemastery").default<number, number, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+    persistConnections: import("@deepseek-ai/schemastery").default<boolean, boolean, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
     clients: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         command?: string | null | undefined;
         args?: string[] | null | undefined;
         searchPaths?: string[] | null | undefined;
-    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-        command: import("@deepseek-ai/schemastery").default<string, string>;
-        args: import("@deepseek-ai/schemastery").default<string[], string[]>;
-        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[]>;
-    }>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">>;
+    } & import("cosmokit").Dict, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+        command: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        args: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+        searchPaths: import("@deepseek-ai/schemastery").default<string[], string[], "plain">;
+    }>>, "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "doris" | "sqlserver">, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
     connections: import("@deepseek-ai/schemastery").default<import("@deepseek-ai/cosmokit").Dict<{
         type?: "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver" | null | undefined;
         host?: string | null | undefined;
@@ -218,18 +217,18 @@ export declare const Config: import("@deepseek-ai/schemastery").default<Schemast
         secure?: boolean | null | undefined;
         passwordRef?: string | null | undefined;
         password?: null | undefined;
-    } & import("cosmokit").Dict, string>, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<{
-        type: import("@deepseek-ai/schemastery").default<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver">;
-        host: import("@deepseek-ai/schemastery").default<string, string>;
-        port: import("@deepseek-ai/schemastery").default<number, number>;
-        user: import("@deepseek-ai/schemastery").default<string, string>;
-        database: import("@deepseek-ai/schemastery").default<string, string>;
-        readonly: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-        secure: import("@deepseek-ai/schemastery").default<boolean, boolean>;
-        passwordRef: import("@deepseek-ai/schemastery").default<string, string>;
-        password: import("@deepseek-ai/schemastery").default<never, never>;
-    }>, string>>;
-}>>;
+    } & import("cosmokit").Dict, string>, import("@deepseek-ai/cosmokit").Dict<Schemastery.ObjectT<NoInfer<{
+        type: import("@deepseek-ai/schemastery").default<"mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "mysql" | "postgres" | "sqlite" | "oracle" | "hive" | "impala" | "clickhouse" | "doris" | "sqlserver", "plain">;
+        host: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        port: import("@deepseek-ai/schemastery").default<number, number, "plain">;
+        user: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        database: import("@deepseek-ai/schemastery").default<string, string, "plain">;
+        readonly: import("@deepseek-ai/schemastery").default<boolean, boolean, "plain">;
+        secure: import("@deepseek-ai/schemastery").default<boolean, boolean, "plain">;
+        passwordRef: import("@deepseek-ai/schemastery").default<string, string, Mode>;
+        password: import("@deepseek-ai/schemastery").default<never, never, Mode>;
+    }>>, string>, Mode extends "volatile" | "volatile-defined" ? "volatile-defined" : "defined">;
+}>>, "plain">;
 /**
  * Resolve the harness home the same way `@deepseek-ai/dsh-paths` does:
  * `$DSH_HOME` (non-blank) else `~/.dsh`, normalized absolute.
@@ -251,30 +250,18 @@ export declare function isLegacyManagedPreset(source: string): boolean;
 export declare function profileInstallCommand(profile: string): string;
 /** Actionable diagnostic for a roster-visible preset whose profile lacks this package. */
 export declare function missingProfileDependencyMessage(profile: string): string;
-/** Tool configuration inherited by the profile-preloaded preset capabilities. */
+/** Tool configuration inherited by the registry-owned preset capabilities. */
 type PresetCapabilitiesConfig = Pick<ToolConfig, 'queryTimeoutMs' | 'maxResultChars' | 'maxRows' | 'maxQueryChars' | 'readonly' | 'clients'>;
 /**
- * Register the statically imported database tools and surface adapters under the exact
- * standing key owned by the data-agent preset. Selecting the preset performs
- * no package import and only links the agent scope to this key.
+ * Declare the preset through the host registry. The registry owns its scope,
+ * revision lifetime and blank-session rebinding; no private scope tags are read.
+ * Absolute artifact URLs keep scoped entries beside this installed package even
+ * when the host and plugin use different module-resolution roots (Desktop).
  */
-export declare function mountPresetCapabilities(ctx: Context, key: ScopeKey, scopeTag: symbol, config: PresetCapabilitiesConfig, commandOptions?: DataAgentCommandAdapterOptions): Promise<void>;
-/**
- * Mount the tool half alone into one preset this package does not own.
- *
- * Deliberately narrower than {@link mountPresetCapabilities}: no `/database`
- * or `/catalog` command, and no inherited-tool restriction. A general-purpose
- * preset must keep every tool it already composes and merely gain SQL beside
- * them, whereas the owned data preset is a closed surface by design.
- * @param ctx - host Context that already provides the data-agent services.
- * @param presetId - an existing preset that should also reach the database.
- * @param config - the resolved tool-half settings.
- * @throws when the preset does not exist, rather than silently skipping it.
- */
-export declare function mountPresetTools(ctx: Context, presetId: string, config: PresetCapabilitiesConfig): Promise<void>;
+export declare function registerPreset(ctx: Context, presetId: string, config: PresetCapabilitiesConfig): Promise<void>;
 /**
  * Mount the data-agent profile row: connection store, config-seeded
- * connections, preset installation, and profile-preloaded preset capabilities.
+ * connections, preset installation, and registry-owned preset capabilities.
  * HTTP routes are the sibling `data-agent-routes` row (`./routes`).
  * @param ctx - host cordis context.
  * @param config - validated loader configuration.

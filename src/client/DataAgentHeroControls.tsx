@@ -1,20 +1,17 @@
 /**
- * Alpha.2 New Session compatibility surface.
+ * New Session preset-seat adapter.
  *
  * The host's agent-preset seat owns the staged selection. This component
  * preserves that seat verbatim and adds the database entry only while the
  * staged preset is `data-agent`.
  */
-import { DataIcon } from './icons.tsx'
 import { useLayoutEffect, useRef } from 'react'
 import type { ComponentType } from 'react'
-import type { AgentPresetSeatProps, AgentPresetSeatState } from '@deepseek-ai/dsh-client-ui-agent-preset/client'
-import { Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { AgentPresetSeatInjected, AgentPresetSeatProps, AgentPresetSeatState } from '@deepseek-ai/dsh-client-ui-agent-preset/client'
+import { IconDataOutlineRegular, Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-// Type-only: contributes the alpha.2 useSessions global slot prop.
-import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type { DataAgentKey } from './locales.ts'
-import { mainSessionId, DATA_AGENT_PRESET, type ObservableSnapshot, type WorkbenchOpenSnapshot } from './workbench-open.ts'
+import { DATA_AGENT_PRESET, type WorkbenchOpenSnapshot } from './workbench-open.ts'
 import { overrideComposerPlaceholder } from './workbench-placeholder.ts'
 import css from './DataAgentWorkbench.module.css'
 
@@ -39,7 +36,7 @@ export function DataAgentHeroControls(props: DataAgentHeroControlsProps) {
     useAgentPresetSeat,
   } = props
   const preset = useAgentPresetSeat((state: AgentPresetSeatState) => state.current)
-  const currentSessionId = props.useSessions(mainSessionId)
+  const currentSessionId = props.sessionId
   const pending = useHeroWorkbench(state => state.pending)
   const triggerLabel = dataAgentT('workbench.open.disconnected' as DataAgentKey)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -73,7 +70,7 @@ export function DataAgentHeroControls(props: DataAgentHeroControlsProps) {
             disabled={pending}
             onClick={requestWorkbench}
           >
-            <DataIcon size={17} />
+            <IconDataOutlineRegular size={17} />
             <span>{pending ? dataAgentT('state.checking' as DataAgentKey) : dataAgentT('action.config' as DataAgentKey)}</span>
           </button>
         </Tooltip>
@@ -83,11 +80,4 @@ export function DataAgentHeroControls(props: DataAgentHeroControlsProps) {
 }
 
 /** Structural type of the host preset entry's raw inject face. */
-export interface HostAgentPresetSeatFace {
-  hooks: {
-    agentPresetSeat: ObservableSnapshot<AgentPresetSeatState>
-  }
-  load(): Promise<void>
-  select(id: string): Promise<string | undefined>
-  introduced(): void
-}
+export type HostAgentPresetSeatFace = AgentPresetSeatInjected

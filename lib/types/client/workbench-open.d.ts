@@ -40,4 +40,6 @@ export interface WorkbenchOpenBridge {
  */
 export declare function createWorkbenchOpenBridge(sessions: SessionListSource, startSession: () => void): WorkbenchOpenBridge;
 /** Return the main-view Session across the legacy and retained-list formats. */
-export declare function mainSessionId(list: Pick<SessionListLike, 'current'> & Partial<Pick<SessionListLike, 'byId'>>): string | undefined;
+export declare function mainSessionId(list: {
+    current?: string;
+} & Partial<Pick<SessionListLike, 'byId'>>): string | undefined;

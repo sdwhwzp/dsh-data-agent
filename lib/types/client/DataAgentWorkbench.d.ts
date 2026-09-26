@@ -3,11 +3,8 @@ import { type ObservableSnapshot, type WorkbenchOpenSnapshot } from './workbench
 export type { DatabaseType } from '../database-types.ts';
 /** The sessions-list slice the workbench needs (structural; avoids a runtime import). */
 export interface SessionListLike {
-    current?: string;
     byId: Record<string, {
-        retainedBy?: {
-            mainView?: number;
-        };
+        readonly retainedBy?: Readonly<Record<string, number>>;
         projectionValues?: {
             agentPreset?: string | null;
         };

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { Config, apply, missingProfileDependencyMessage, mountPresetTools } from '../src/index.ts'
+import { Config, apply, missingProfileDependencyMessage } from '../src/index.ts'
 import { apply as applyToolHalf } from '../src/tool.ts'
 import { apply as applyCommandHalf, DATA_AGENT_TOOL_NAMES } from '../src/command.ts'
 import { createConnectionStore } from '../src/connections.ts'
@@ -14,16 +14,16 @@ describe('Web/TUI package and preset composition', () => {
     expect(pkg.exports['./command'].default).toBe('./lib/command.js')
     expect(pkg.peerDependencies.react).toContain('^19.0.0')
     expect(pkg.peerDependenciesMeta.react.optional).toBe(true)
-    expect(pkg.dsh.engines.dsh).toBe('>=0.1.2-alpha.2')
+    expect(pkg.dsh.engines.dsh).toBe('0.1.7-rc.2')
     expect(pkg.peerDependencies['@deepseek-ai/dsh-client-runtime']).toBeUndefined()
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-api-session-controller'].optional).toBe(true)
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-agent-preset']).toBe('^0.1.2-alpha.2')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-agent-preset']).toBe('0.1.7-rc.2')
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-client-ui-agent-preset'].optional).toBe(true)
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-tool']).toBe('^0.1.2-alpha.2')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-tool']).toBe('0.1.7-rc.2')
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-client-ui-tool'].optional).toBe(true)
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-renderer']).toBe('^0.1.2-alpha.2')
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-session']).toBe('^0.1.2-alpha.2')
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-workspace']).toBe('^0.1.2-alpha.2')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-renderer']).toBe('0.1.7-rc.2')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-session']).toBe('0.1.7-rc.2')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-workspace']).toBe('0.1.7-rc.2')
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-client-ui-workspace'].optional).toBe(true)
     expect(pkg.peerDependencies['@deepseek-harness-tui/dsh-tui']).toBeUndefined()
     expect(pkg.devDependencies['@deepseek-harness-tui/dsh-tui']).toBeUndefined()
@@ -44,11 +44,9 @@ describe('Web/TUI package and preset composition', () => {
     expect(preset).not.toContain("name: '@yejiming/dsh-data-agent/tool'")
     expect(preset).not.toContain("name: '@yejiming/dsh-data-agent/command'")
     const profileEntry = readFileSync(new URL('src/index.ts', root), 'utf8')
-    expect(profileEntry).toContain("import { apply as applyDatabaseTools, type Config as ToolConfig } from './tool.ts'")
-    expect(profileEntry).toContain('apply as applyDatabaseCommand')
-    expect(profileEntry).toContain("} from './command.ts'")
-    expect(profileEntry).toContain('ctx.agentPresets.standingKeyFor(resolved.presetId)')
-    expect(profileEntry).toContain('mountPresetCapabilities(ctx, standingKey')
+    expect(profileEntry).toContain('ctx.agentPresets.register(')
+    expect(profileEntry).not.toContain('standingKeyFor')
+    expect(profileEntry).not.toContain('Object.getOwnPropertySymbols')
     const toolSource = readFileSync(new URL('src/tool.ts', root), 'utf8')
     expect([...toolSource.matchAll(/name: '(sql-query|sql-write|sql-cmd)'/g)].map(match => match[1])).toEqual([
       'sql-query', 'sql-write', 'sql-cmd',
@@ -248,59 +246,9 @@ describe('render-analysis cross-surface registration', () => {
   })
 })
 
-describe('database tools in a preset this package does not own', () => {
-  it('mounts the tool half alone, leaving the host preset its own tools and commands', async () => {
-    const registered: string[] = []
-    const restrictions: unknown[] = []
-    const commands: string[] = []
-    const extended: Record<symbol, unknown>[] = []
-    const standing = { key: Symbol('standing'), tag: Symbol('scope') }
-    const ctx: any = {
-      logger: { info() {}, warn() {} },
-      tools: {
-        register(def: { name?: string }) { registered.push(def.name ?? '?'); return () => {} },
-        restrict(filter: unknown) { restrictions.push(filter) },
-        schemas() { return [{ name: 'read' }, { name: 'bash' }] },
-      },
-      commands: { register(def: { name: string }) { commands.push(def.name); return () => {} } },
-      agentPresets: {
-        standingKeyFor: async () => standing.key,
-        standing: new Map([['code', Promise.resolve({ key: standing.key, scope: { ctx: { [standing.tag]: standing.key } } })]]),
-      },
-      extend(values: Record<symbol, unknown>) { extended.push(values); return { ...ctx, ...values } },
-      get() { return undefined },
-      effect() { return () => {} },
-      emit() {},
-      on() {},
-    }
-    await mountPresetTools(ctx, 'code', {
-      queryTimeoutMs: 5000, maxResultChars: 20000, maxRows: 100,
-      maxQueryChars: 65536, readonly: false, clients: {},
-    })
-    expect(registered).toEqual([
-      'sql-query', 'sql-write', 'sql-cmd', 'render-analysis',
-      'catalog-search', 'catalog-get', 'metric-get',
-    ])
-    // The owned data preset denies every inherited tool and registers
-    // /database and /catalog. A borrowed preset must keep both of its own.
-    expect(restrictions).toEqual([])
-    expect(commands).toEqual([])
-    // Registered through the named preset's standing scope, not the bare host
-    // Context: the wrong tag would hand SQL to every preset in the deployment.
-    expect(extended).toEqual([{ [standing.tag]: standing.key }])
-  })
-
-  it('refuses a preset that does not exist instead of silently skipping it', async () => {
-    const ctx: any = {
-      logger: { info() {}, warn() {} },
-      agentPresets: { standingKeyFor: async () => Symbol('key'), standing: new Map() },
-      get() { return undefined },
-    }
-    await expect(mountPresetTools(ctx, 'missing', {
-      queryTimeoutMs: 5000, maxResultChars: 20000, maxRows: 100,
-      maxQueryChars: 65536, readonly: false, clients: {},
-    })).rejects.toThrow(/has no standing scope/)
-  })
+it('requires declarative composition for additional database presets', async () => {
+  await expect(apply({} as never, Config({ additionalToolPresets: ['code'] })))
+    .rejects.toThrow('requires profileManagedPresets=true and declarative /tool rows')
 })
 
 it('uses declarative profile preset capabilities without a legacy standing registry', async () => {
