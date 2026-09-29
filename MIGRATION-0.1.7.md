@@ -1,6 +1,6 @@
 # DSH 0.1.7-rc.1 compatibility
 
-This source revision is plugin **0.2.0**, targeting exactly **DSH 0.1.7-rc.1**. Source migration and subsequent, explicitly authorized local Web installation were validated separately.
+This historical record describes plugin **0.2.0**, targeting exactly **DSH 0.1.7-rc.1**. Source migration and subsequent, explicitly authorized local Web installation were validated separately. For the current target, see [DSH 0.2.0-rc.1 compatibility](MIGRATION-0.2.0.md).
 
 ## Baseline and evidence
 

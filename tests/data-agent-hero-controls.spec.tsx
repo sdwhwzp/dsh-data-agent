@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DataAgentHeroControls } from '../src/client/DataAgentHeroControls.tsx'
 import { zh } from '../src/client/locales.ts'
-import type { AgentPresetSeatState } from '@deepseek-ai/dsh-client-ui-agent-preset/client'
+import type { AgentPresetSeatProps, AgentPresetSeatState } from '@deepseek-ai/dsh-client-ui-agent-preset/client'
 import type { WorkbenchOpenSnapshot } from '../src/client/workbench-open.ts'
 
 vi.mock('@deepseek-ai/dsh-client-ui-primitives', () => ({
@@ -20,11 +20,13 @@ afterEach(() => {
 const dictionary = zh as Record<string, string>
 const dataAgentT = (key: string): string => dictionary[key] ?? key
 const presetT = (key: string): string => key
-const OriginalSeat = () => <button type="button">数据模式</button>
+const OriginalSeat = ({ useDeveloperTools }: Pick<AgentPresetSeatProps, 'useDeveloperTools'>) => (
+  useDeveloperTools(value => value) ? <button type="button">数据模式</button> : null
+)
 
 function usePreset(current: string) {
   const state: AgentPresetSeatState = {
-    options: [], current, error: null, busy: false, introduce: false, showPicker: true,
+    options: [], current, error: null, busy: false, introduce: false,
   }
   return <T,>(selector: (snapshot: AgentPresetSeatState) => T): T => selector(state)
 }
@@ -38,6 +40,7 @@ function renderHero(
   snapshot: WorkbenchOpenSnapshot,
   requestWorkbench = vi.fn(),
   currentSessionId?: string,
+  developerTools = true,
 ) {
   render(
     <div data-testid="composer-scope">
@@ -49,7 +52,7 @@ function renderHero(
           useHeroWorkbench: useOpen(snapshot),
           useAgentPresetSeat: usePreset(current),
           sessionId: currentSessionId,
-          useShowPresetPicker: (select: (value: boolean) => unknown) => select(true),
+          useDeveloperTools: (select: (value: boolean) => unknown) => select(developerTools),
           load: vi.fn(),
           select: vi.fn(),
           introduced: vi.fn(),
@@ -87,6 +90,12 @@ describe('DataAgentHeroControls', () => {
     expect(screen.getByRole('textbox').getAttribute('data-placeholder')).toBe('宿主占位文案')
     expect(screen.getByTestId('composer-scope').querySelector('[data-composer-placeholder="true"]')?.textContent)
       .toBe('宿主占位文案')
+  })
+
+  it('forwards the host Developer tools preference while keeping default data-mode connections accessible', () => {
+    renderHero('data-agent', { pending: false, revision: 0 }, vi.fn(), undefined, false)
+    expect(screen.queryByRole('button', { name: '数据模式' })).toBeNull()
+    expect(screen.getByRole('button', { name: '数据库工作台：未连接' })).toBeTruthy()
   })
 
   it('disables the hero action while the host creates the Session', () => {

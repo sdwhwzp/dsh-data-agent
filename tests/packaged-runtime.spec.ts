@@ -10,7 +10,7 @@ import yaml from 'js-yaml'
 const execute = promisify(execFile)
 const root = fileURLToPath(new URL('../', import.meta.url))
 
-it('cold-starts the packaged plugin on DSH 0.1.7-rc.2 and completes a real SQLite tool turn', async () => {
+it('cold-starts the packaged plugin on DSH 0.2.0-rc.1 and completes a real SQLite tool turn', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'dsh-data-agent-runtime-'))
   try {
     const home = join(directory, 'home')
@@ -26,7 +26,7 @@ it('cold-starts the packaged plugin on DSH 0.1.7-rc.2 and completes a real SQLit
     for (const manifest of ['package.json', 'dsh-plugin.json']) {
       expect(JSON.parse(await readFile(join(artifact, manifest), 'utf8')).version).toBe(sourcePackage.version)
     }
-    expect(JSON.parse(await readFile(join(root, 'node_modules/@deepseek-ai/dsh/package.json'), 'utf8')).version).toBe('0.1.7-rc.2')
+    expect(JSON.parse(await readFile(join(root, 'node_modules/@deepseek-ai/dsh/package.json'), 'utf8')).version).toBe('0.2.0-rc.1')
     await symlink(join(root, 'node_modules'), join(artifact, 'node_modules'), 'dir')
     await symlink(artifact, join(profile, 'node_modules', '@yejiming', 'dsh-data-agent'), 'dir')
     const database = join(workspace, 'fixture.sqlite')

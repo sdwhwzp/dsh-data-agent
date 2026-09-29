@@ -6,7 +6,7 @@ vi.mock('../src/client/DataAgentHeroControls.tsx', () => ({ DataAgentHeroControl
 vi.mock('../src/client/AnalysisDashboard.tsx', () => ({ RenderAnalysisRow: () => null }))
 
 it('forwards the seat session id and host hooks, then removes its wrapper on disposal', () => {
-  const face = { hooks: { agentPresetSeat: {}, showPresetPicker: {} }, select: vi.fn() }
+  const face = { hooks: { agentPresetSeat: {}, developerTools: {} }, select: vi.fn() }
   const hostInject = vi.fn(() => face)
   const host = { component: () => null, options: { priority: 0 }, inject: hostInject }
   const disposers: (() => void)[] = []
@@ -40,7 +40,7 @@ it('forwards the seat session id and host hooks, then removes its wrapper on dis
   expect(hostInject).toHaveBeenLastCalledWith('session-fixture')
   expect(scopedFace.select).toBe(face.select)
   expect(scopedFace.hooks.agentPresetSeat).toBe(face.hooks.agentPresetSeat)
-  expect(scopedFace.hooks.showPresetPicker).toBe(face.hooks.showPresetPicker)
+  expect(scopedFace.hooks.developerTools).toBe(face.hooks.developerTools)
   inject(undefined)
   expect(hostInject).toHaveBeenLastCalledWith(undefined)
   for (const dispose of disposers.reverse()) dispose()

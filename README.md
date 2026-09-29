@@ -54,7 +54,7 @@ Catalog model inputs use the producer source `plugin:@yejiming/dsh-data-agent`, 
 
 ### 1. 运行环境准备
 
-- **DeepSeek Harness `0.1.7-rc.2`**（本源码版本 `0.2.0` 的适配目标；官方 `@deepseek-ai/dsh-*` 依赖统一为此版本）
+- **DeepSeek Harness `0.2.0-rc.1`**（本源码版本 `0.2.1` 的适配目标；官方 `@deepseek-ai/dsh-*` 依赖统一为此版本）
 - 本机可访问目标数据库（支持本地 SQLite 文件或局域网/云端数据库）
 
 ### 2. 快速安装
