@@ -52,7 +52,7 @@ Tired of filing data requests, wrestling with complex SQL queries, exporting CSV
 
 ### 1. Prerequisites
 
-- **DeepSeek Harness `0.2.0-rc.1`** (the target of source version `0.2.1`; all official `@deepseek-ai/dsh-*` dependencies are pinned to this version)
+- **DeepSeek Harness `>=0.2.0-rc.1`** (the declared compatibility range for plugin `0.2.2`; current runtime validation covers `0.2.0-rc.2`)
 - Accessible database (local SQLite file or remote/cloud database)
 
 ### 2. Quick Install

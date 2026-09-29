@@ -14,23 +14,26 @@ describe('Web/TUI package and preset composition', () => {
     expect(pkg.exports['./command'].default).toBe('./lib/command.js')
     expect(pkg.peerDependencies.react).toContain('^19.0.0')
     expect(pkg.peerDependenciesMeta.react.optional).toBe(true)
-    expect(pkg.dsh.engines.dsh).toBe('0.2.0-rc.1')
-    for (const dependencies of [pkg.peerDependencies, pkg.devDependencies]) {
+    expect(pkg.dsh.engines.dsh).toBe('>=0.2.0-rc.1')
+    for (const [dependencies, expectedVersion] of [
+      [pkg.peerDependencies, pkg.dsh.engines.dsh],
+      [pkg.devDependencies, '0.2.0-rc.2'],
+    ] as const) {
       for (const [name, version] of Object.entries(dependencies)) {
         if (name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-')) {
-          expect(version, `${name} must match the supported host`).toBe(pkg.dsh.engines.dsh)
+          expect(version, `${name} must match its compatibility range or development baseline`).toBe(expectedVersion)
         }
       }
     }
     expect(pkg.peerDependencies['@deepseek-ai/dsh-client-runtime']).toBeUndefined()
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-api-session-controller'].optional).toBe(true)
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-agent-preset']).toBe('0.2.0-rc.1')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-agent-preset']).toBe('>=0.2.0-rc.1')
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-client-ui-agent-preset'].optional).toBe(true)
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-tool']).toBe('0.2.0-rc.1')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-tool']).toBe('>=0.2.0-rc.1')
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-client-ui-tool'].optional).toBe(true)
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-renderer']).toBe('0.2.0-rc.1')
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-session']).toBe('0.2.0-rc.1')
-    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-workspace']).toBe('0.2.0-rc.1')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-renderer']).toBe('>=0.2.0-rc.1')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-session']).toBe('>=0.2.0-rc.1')
+    expect(pkg.peerDependencies['@deepseek-ai/dsh-client-ui-workspace']).toBe('>=0.2.0-rc.1')
     expect(pkg.peerDependenciesMeta['@deepseek-ai/dsh-client-ui-workspace'].optional).toBe(true)
     expect(pkg.peerDependencies['@deepseek-harness-tui/dsh-tui']).toBeUndefined()
     expect(pkg.devDependencies['@deepseek-harness-tui/dsh-tui']).toBeUndefined()

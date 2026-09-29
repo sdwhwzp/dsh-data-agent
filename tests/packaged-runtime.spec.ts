@@ -3,14 +3,14 @@ import { promisify } from 'node:util'
 import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { expect, it } from 'vitest'
 import yaml from 'js-yaml'
 
 const execute = promisify(execFile)
 const root = fileURLToPath(new URL('../', import.meta.url))
 
-it('cold-starts the packaged plugin on DSH 0.2.0-rc.1 and completes a real SQLite tool turn', async () => {
+it('cold-starts the packaged plugin on DSH 0.2.0-rc.2 and completes a real SQLite tool turn', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'dsh-data-agent-runtime-'))
   try {
     const home = join(directory, 'home')
@@ -26,7 +26,7 @@ it('cold-starts the packaged plugin on DSH 0.2.0-rc.1 and completes a real SQLit
     for (const manifest of ['package.json', 'dsh-plugin.json']) {
       expect(JSON.parse(await readFile(join(artifact, manifest), 'utf8')).version).toBe(sourcePackage.version)
     }
-    expect(JSON.parse(await readFile(join(root, 'node_modules/@deepseek-ai/dsh/package.json'), 'utf8')).version).toBe('0.2.0-rc.1')
+    expect(JSON.parse(await readFile(join(root, 'node_modules/@deepseek-ai/dsh/package.json'), 'utf8')).version).toBe('0.2.0-rc.2')
     await symlink(join(root, 'node_modules'), join(artifact, 'node_modules'), 'dir')
     await symlink(artifact, join(profile, 'node_modules', '@yejiming', 'dsh-data-agent'), 'dir')
     const database = join(workspace, 'fixture.sqlite')
@@ -34,14 +34,17 @@ it('cold-starts the packaged plugin on DSH 0.2.0-rc.1 and completes a real SQLit
     const before = await readFile(database)
     await writeFile(join(profile, 'package.json'), JSON.stringify({ name: 'data-agent-compatibility-fixture', private: true, type: 'module', dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@yejiming/dsh-data-agent'] } } }))
     await writeFile(join(profile, 'cordis.patch.yml'), yaml.dump([
-      { id: 'data-agent', config: { connections: { '*': { type: 'sqlite', database, readonly: true } } } },
       { id: 'session-title-llm', disabled: true },
       { id: 'deepseek-account', disabled: true },
       { id: 'hmr', disabled: true },
       { id: 'session-persistence-jsonl', config: { root: join(home, 'sessions'), compression: 'none' } },
       { insert: [
         { id: 'agent-preset-registry', name: '@deepseek-ai/dsh-agent-preset-registry', config: { default: 'data-agent' } },
-        { id: 'runtime-probe', name: new URL('./fixtures/dsh-runtime-probe.mjs', import.meta.url).href },
+        {
+          id: 'runtime-probe',
+          name: new URL('./fixtures/dsh-runtime-probe.mjs', import.meta.url).href,
+          config: { database, commandEntry: pathToFileURL(join(artifact, 'lib/command.js')).href },
+        },
       ] },
     ]))
     const { stdout: output, stderr: diagnostic } = await execute(process.execPath, [join(root, 'node_modules/@deepseek-ai/dsh/lib/bin.js'), '--profile', 'compatibility'], {
@@ -54,6 +57,7 @@ it('cold-starts the packaged plugin on DSH 0.2.0-rc.1 and completes a real SQLit
     expect(result, output + diagnostic).toBeDefined()
     expect(JSON.parse(result!.slice('DSH_DATA_AGENT_SMOKE='.length))).toMatchInlineSnapshot(`
       {
+        "connectionQuestions": 2,
         "modelCalls": 2,
         "reload": true,
         "tools": [
