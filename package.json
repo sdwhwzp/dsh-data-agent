@@ -1,7 +1,7 @@
 {
   "name": "@yejiming/dsh-data-agent",
   "description": "Data Agent for DSH Web and TUI: shared database connections, versioned metadata Catalog governance, secure credentials, SQL and Catalog tools, and the data-agent preset",
-  "version": "0.2.2-dsh.20260929.1",
+  "version": "0.2.2-dsh.20261028.1",
   "publishConfig": {
     "access": "public"
   },
@@ -32,10 +32,6 @@
       "types": "./lib/types/command.d.ts",
       "default": "./lib/command.js"
     },
-    "./invariant": {
-      "types": "./lib/types/invariant.d.ts",
-      "default": "./lib/invariant.js"
-    },
     "./ecosystem": {
       "types": "./lib/types/ecosystem.d.ts",
       "default": "./lib/ecosystem.js"
@@ -50,7 +46,7 @@
   },
   "dsh": {
     "engines": {
-      "dsh": ">=0.2.0-rc.1"
+      "dsh": ">=0.2.0-rc.1 || ^0.2.2-alpha.2"
     },
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -96,33 +92,32 @@
     "zod": "^4.4.3"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "4.0.4",
-    "@deepseek-ai/dsh-agent": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-agent-preset-registry": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-api-session-controller": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-locale": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-agent-preset": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-conversation": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-primitives": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-renderer": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-session": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-slots": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-tool": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-workspace": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-commands": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-credentials": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-host-webserver": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-invariants": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-llm": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-scope": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-session": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-storage": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-storage-domain": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-storage-json": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-subprocess": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-user-questions": ">=0.2.0-rc.1",
-    "@deepseek-ai/dsh-util-values": ">=0.2.0-rc.1",
+    "@deepseek-ai/cordis": "4.0.4 || ^4.0.6-alpha.1",
+    "@deepseek-ai/dsh-agent": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-agent-preset-registry": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-api-session-controller": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-locale": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-agent-preset": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-conversation": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-primitives": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-renderer": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-session": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-slots": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-tool": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-client-ui-workspace": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-commands": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-credentials": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-host-webserver": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-llm": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-scope": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-session": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-storage": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-storage-domain": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-storage-json": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-subprocess": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-user-questions": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
+    "@deepseek-ai/dsh-util-values": ">=0.2.0-rc.1 || ^0.2.2-alpha.2",
     "react": "^18.2.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
@@ -186,7 +181,6 @@
     "@deepseek-ai/dsh-commands": "0.2.0-rc.2",
     "@deepseek-ai/dsh-credentials": "0.2.0-rc.2",
     "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-invariants": "0.2.0-rc.2",
     "@deepseek-ai/dsh-llm": "0.2.0-rc.2",
     "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
     "@deepseek-ai/dsh-session": "0.2.0-rc.2",

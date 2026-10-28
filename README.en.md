@@ -190,3 +190,5 @@ This project is licensed under the [MIT License](LICENSE).
 The Web workbench supports the Harness 0.1.7 icon names and retained main-view Session list, while retaining the earlier client vocabulary.
 
 Harness 0.1.7 deployments use `profileManagedPresets: true` with `installPreset: false`. The profile must declare `/tool` and `/command` child plugins for the data preset and add only `/tool` to presets named in `additionalToolPresets`, preserving their existing tools.
+
+For the removed optional `@yejiming/dsh-data-agent/invariant` entry, follow the [upgrade guide](docs/upgrade-guide/v0.2.2-dsh.20261028.1/remove-invariant/guide.md).

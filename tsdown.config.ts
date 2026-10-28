@@ -1,7 +1,6 @@
 /**
  * Standalone build config for the merged data-agent package: the node-half
- * library (lib/index.js server half + lib/tool.js sql-cmd tool half +
- * lib/invariant.js) and the browser client bundle (lib/client.js), replicating
+ * library (lib/index.js server half + lib/tool.js sql-cmd tool half) and the browser client bundle (lib/client.js), replicating
  * the harness's shared client preset (packages/client/tsdown.client.ts): a
  * closure-factory artifact calling window.__ModuleLoader__.load({id, factory}),
  * with platform modules resolved through the injected require (the loader
@@ -30,7 +29,7 @@ const PLATFORM_MODULES = [
 const CSS_VIRTUAL_PREFIX = '\0dsh-css:'
 const CSS_VIRTUAL_SUFFIX = '.mjs'
 
-/** Node-half library: server, routes, tool, human command, invariant, and ecosystem entries. */
+/** Node-half library: server, routes, tool, human command, and ecosystem entries. */
 const nodeHalf: UserConfig = {
   name: PLUGIN_ID,
   entry: {
@@ -38,7 +37,6 @@ const nodeHalf: UserConfig = {
     routes: 'src/routes.ts',
     tool: 'src/tool.ts',
     command: 'src/command.ts',
-    invariant: 'src/invariant.ts',
     ecosystem: 'src/ecosystem.ts',
   },
   outDir: 'lib',

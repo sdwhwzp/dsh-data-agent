@@ -84,7 +84,6 @@
       "./client",
       "./command",
       "./cordis.patch.yml",
-      "./invariant",
       "./package.json",
       "./routes",
       "./src/*",

@@ -196,3 +196,5 @@ DSH Data Agent 广泛支持各类主流业务数据库、分析型数仓及本�
 Web 数据工作台兼容 Harness 0.1.7 的图标名称和主视图会话保留状态，并保留较早客户端接口的兼容。
 
 Harness 0.1.7 部署使用 `profileManagedPresets: true`、`installPreset: false`。Profile 须声明数据模式的 `/tool` 和 `/command` 子插件，并仅向 `additionalToolPresets` 中的其他预设添加 `/tool`，以保留其原有工具。
+
+可选的 `@yejiming/dsh-data-agent/invariant` 入口已移除，配置迁移见[升级指南](docs/upgrade-guide/v0.2.2-dsh.20261028.1/remove-invariant/guide.zh.md)。
