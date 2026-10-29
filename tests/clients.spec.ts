@@ -80,7 +80,7 @@ describe('buildClientTemplate', () => {
   it('builds the sqlite argv with the file path last and no credentials', () => {
     const template = buildClientTemplate('sqlite', sqliteConnection)
     expect(template.command).toBe('sqlite3')
-    expect(template.args).toEqual(['-header', '-column', '/tmp/orders.db'])
+    expect(template.args).toEqual(['-column', '-header', '/tmp/orders.db'])
     expect(template.env).toEqual({})
   })
 
@@ -150,7 +150,7 @@ describe('buildIntrospectTemplate', () => {
       '-t', '-A', '-h', 'pg.internal', '-p', '5433', '-U', 'owner', '-d', 'analytics',
     ])
     expect(buildIntrospectTemplate('sqlite', sqliteConnection).args).toEqual([
-      '-noheader', '-list', '/tmp/orders.db',
+      '-list', '-noheader', '/tmp/orders.db',
     ])
     // Credentials still travel in env only.
     expect(buildIntrospectTemplate('mysql', mysqlConnection).env).toEqual({ MYSQL_PWD: 'hunter2' })
@@ -511,7 +511,7 @@ describe('structured query template and read row limit', () => {
       '-h', 'db.internal', '-P', '3307', '-u', 'app', '-D', 'orders',
     ])
     expect(buildStructuredQueryTemplate('sqlite', sqliteConnection).args).toEqual([
-      '-header', '-csv', '/tmp/orders.db',
+      '-csv', '-header', '/tmp/orders.db',
     ])
     expect(buildStructuredQueryTemplate('postgres', postgresConnection).args).toEqual([
       '-A', '-h', 'pg.internal', '-p', '5433', '-U', 'owner', '-d', 'analytics',

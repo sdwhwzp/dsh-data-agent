@@ -431,12 +431,13 @@ export interface ClientTemplate {
  */
 const MYSQL_COMMON_ARGS = ['--default-character-set=utf8mb4', '--batch', '--raw'] as const
 
+// SQLite output-mode flags reset headers; apply the explicit header flag last.
 /** Query-mode flag arguments per type (plain/human output). */
 const QUERY_ARGS: Readonly<Record<DatabaseType, readonly string[]>> = {
   mysql: MYSQL_COMMON_ARGS,
   doris: MYSQL_COMMON_ARGS,
   postgres: ['-A'],
-  sqlite: ['-header', '-column'],
+  sqlite: ['-column', '-header'],
   oracle: ['-S', '/nolog'],
   hive: ['--silent=true', '--outputformat=tsv2'],
   impala: ['-B'],
@@ -449,7 +450,7 @@ const INTROSPECT_ARGS: Readonly<Record<DatabaseType, readonly string[]>> = {
   mysql: MYSQL_COMMON_ARGS,
   doris: MYSQL_COMMON_ARGS,
   postgres: ['-t', '-A'],
-  sqlite: ['-noheader', '-list'],
+  sqlite: ['-list', '-noheader'],
   oracle: ['-S', '/nolog'],
   hive: ['--silent=true', '--outputformat=tsv2'],
   impala: ['-B'],
@@ -462,7 +463,7 @@ const STRUCTURED_QUERY_ARGS: Readonly<Record<DatabaseType, readonly string[]>> =
   mysql: MYSQL_COMMON_ARGS,
   doris: MYSQL_COMMON_ARGS,
   postgres: ['-A'],
-  sqlite: ['-header', '-csv'],
+  sqlite: ['-csv', '-header'],
   oracle: ['-S', '/nolog'],
   hive: ['--silent=true', '--outputformat=tsv2'],
   impala: ['-B', '--print_header'],
